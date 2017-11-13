@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Popular Movies</string>
+    <string name="main_empty_state_message">Can\'t load Movies!</string>
+    <string name="title_activity_details">DetailsActivity</string>
 </resources>
