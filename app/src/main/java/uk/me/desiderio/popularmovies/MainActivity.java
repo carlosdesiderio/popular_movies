@@ -11,5 +11,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        TextView textView = (TextView) findViewById(R.id.text_hello_world);
+        textView.setText("Hello ");
+        textView.append(BuildConfig.MOVIE_DB_API_TOKEN);
     }
 }
