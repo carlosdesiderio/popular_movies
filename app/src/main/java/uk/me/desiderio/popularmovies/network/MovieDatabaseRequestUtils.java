@@ -33,6 +33,9 @@ public class MovieDatabaseRequestUtils {
     private static final String VIDEO_URL_PATH_STRING = "%1$s/videos";
     private static final String REVIEWS_URL_PATH_STRING = "%1$s/reviews";
 
+    // YouTube end point
+    private static final String YOUTUBE_URL_STRING = "https://www.youtube.com/watch?v=";
+
     /**
      * Provides Movies DB endpoint to retrieve list of trailer of the movie identify by its argument
      */
