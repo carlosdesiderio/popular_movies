@@ -1,6 +1,9 @@
 package uk.me.desiderio.popularmovies;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -9,7 +12,9 @@ import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
+import java.net.URL;
 import java.util.List;
 
 import uk.me.desiderio.popularmovies.data.Movie;
@@ -40,11 +45,11 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnIt
         recyclerView.setLayoutManager(gridLayoutManager);
         recyclerView.setAdapter(adapter);
 
-        // hides empty state view
-        showEmptyStateView(false);
+        // show empty state view initialy
+        showEmptyStateView(true);
 
         // requests data & populates view
-        new MovieRequestAsyncTask(this).execute(MovieDatabaseRequestUtils.getPopularMoviesUrl());
+        requestData(MovieDatabaseRequestUtils.getPopularMoviesUrl());
 
     }
 
@@ -58,10 +63,10 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnIt
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.popular_movies_menu_item:
-                new MovieRequestAsyncTask(this).execute(MovieDatabaseRequestUtils.getPopularMoviesUrl());
+                requestData(MovieDatabaseRequestUtils.getPopularMoviesUrl());
                 return true;
             case R.id.top_rated_movies_menu_item:
-                new MovieRequestAsyncTask(this).execute(MovieDatabaseRequestUtils.getTopRatedMoviesUrl());
+                requestData(MovieDatabaseRequestUtils.getTopRatedMoviesUrl());
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -74,6 +79,22 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnIt
         } else {
             emptyStateView.setVisibility(View.GONE);
         }
+    }
+
+    private void requestData(URL url) {
+        if (isConnected()) {
+            new MovieRequestAsyncTask(this).execute(url);
+        } else {
+            Toast.makeText(this, getString(R.string.no_connection_message), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean isConnected() {
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
     }
 
     @Override
