@@ -3,6 +3,9 @@ package uk.me.desiderio.popularmovies.data;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Data object class to hold info about a movie instance
  */
@@ -15,6 +18,8 @@ public class Movie implements Parcelable {
     private final String synopsis;
     private final double voteAverage;
     private final String posterURLString;
+    private final List<MovieTrailer> trailers;
+    private final List<MovieReview> reviews;
 
     public Movie(int id, String title, String date, String synopsis, double voteAverage, String posterURLString) {
         this.id = id;
@@ -23,6 +28,23 @@ public class Movie implements Parcelable {
         this.synopsis = synopsis;
         this.voteAverage = voteAverage;
         this.posterURLString = posterURLString;
+
+        this.trailers = new ArrayList<>();
+        this.reviews = new ArrayList<>();
+    }
+
+    /**
+     * add movie trailer
+     */
+    public void addTrailer(MovieTrailer trailer) {
+        trailers.add(trailer);
+    }
+
+    /**
+     * add movie review
+     */
+    public void addReview(MovieReview review) {
+        reviews.add(review);
     }
 
     /**
@@ -79,6 +101,19 @@ public class Movie implements Parcelable {
         this.synopsis = in.readString();
         this.voteAverage = in.readDouble();
         this.posterURLString = in.readString();
+        if (in.readByte() == 0x01) {
+            trailers = new ArrayList<>();
+            in.readList(trailers, MovieTrailer.class.getClassLoader());
+        } else {
+            trailers = null;
+        }
+        if (in.readByte() == 0x01) {
+            reviews = new ArrayList<>();
+            in.readList(reviews, MovieReview.class.getClassLoader());
+        } else {
+            reviews = null;
+        }
+
     }
 
     @Override
@@ -89,6 +124,18 @@ public class Movie implements Parcelable {
         parcel.writeString(synopsis);
         parcel.writeDouble(voteAverage);
         parcel.writeString(posterURLString);
+        if (trailers == null) {
+            parcel.writeByte((byte) (0x00));
+        } else {
+            parcel.writeByte((byte) (0x01));
+            parcel.writeList(trailers);
+        }
+        if (reviews == null) {
+            parcel.writeByte((byte) (0x00));
+        } else {
+            parcel.writeByte((byte) (0x01));
+            parcel.writeList(reviews);
+        }
     }
 
     @SuppressWarnings("unused")
