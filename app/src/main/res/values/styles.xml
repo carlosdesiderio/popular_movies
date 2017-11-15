@@ -6,6 +6,22 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+
+        <item name="android:textColorPrimary">@color/textColorPrimary</item>
+        <item name="android:textColorSecondary">@color/textColorSecondary</item>
+
+        <item name="android:windowContentTransitions">true</item>
+    </style>
+
+    <style name="TextAppearance.AppCompat.Title.Italic" parent="TextAppearance.AppCompat.Title">
+        <item name="android:textStyle">italic</item>
+    </style>
+
+
+    <style name="TextAppearance.AppCompat.Caption.Dark" parent="TextAppearance.AppCompat.Body1">
+        <item name="android:textColor">@color/textColorPrimary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
     </style>
 
 </resources>

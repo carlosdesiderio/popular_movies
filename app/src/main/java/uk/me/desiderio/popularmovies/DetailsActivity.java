@@ -1,21 +1,22 @@
 package uk.me.desiderio.popularmovies;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.squareup.picasso.Picasso;
+
 import uk.me.desiderio.popularmovies.data.Movie;
+import uk.me.desiderio.popularmovies.network.MovieDatabaseRequestUtils;
 
 public class DetailsActivity extends AppCompatActivity {
 
     public static final String EXTRA_MOVIE = "extra_movie";
-
-    private TextView titleTextView;
-    private TextView dateTextView;
-    private TextView durationTextView;
-    private TextView voteTextView;
-    private TextView synopsisTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,24 +24,41 @@ public class DetailsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_details);
 
         Intent intent = getIntent();
-        Movie movie = (Movie) intent.getSerializableExtra(EXTRA_MOVIE);
+        Movie movie = intent.getParcelableExtra(EXTRA_MOVIE);
+        Uri uri = MovieDatabaseRequestUtils.getMoviePosterUri(movie.getPosterURLPathString());
+        String releaseYear = movie.getDate().substring(0, movie.getDate().indexOf("-"));
 
-        titleTextView = findViewById(R.id.titleTextView);
-        dateTextView = findViewById(R.id.dateTextView);
-        durationTextView = findViewById(R.id.durationTextView);
-        voteTextView = findViewById(R.id.voteTextView);
-        synopsisTextView = findViewById(R.id.synopsisTextView);
+        TextView titleTextView = findViewById(R.id.titleTextView);
+        TextView dateTextView = findViewById(R.id.dateTextView);
+        TextView durationTextView = findViewById(R.id.durationTextView);
+        durationTextView.setVisibility(View.GONE);
+        TextView voteTextView = findViewById(R.id.voteTextView);
+        TextView synopsisTextView = findViewById(R.id.synopsisTextView);
+        ImageView posterImageView = findViewById(R.id.detailsPosterImageView);
+
+
+        Picasso.with(this).load(uri).into(posterImageView);
 
         titleTextView.setText(movie.getTitle());
-        dateTextView.setText(movie.getDate());
-        durationTextView.setText(String.valueOf(movie.getDuration()));
+        dateTextView.setText(releaseYear);
+
         voteTextView.setText(getVoteAverageString(movie.getVoteAverage()));
         synopsisTextView.setText(movie.getSynopsis());
-
     }
 
-    private String getVoteAverageString(int vote) {
-        return String.valueOf(vote);
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            // responds to the Up/Home button
+            case android.R.id.home:
+                supportFinishAfterTransition();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private String getVoteAverageString(double vote) {
+        return String.valueOf(vote) + "/10";
     }
 
 }

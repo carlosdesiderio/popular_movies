@@ -10,17 +10,31 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_begin="@dimen/details_outer_padding" />
+        app:layout_constraintGuide_begin="@dimen/details_left_padding" />
+
+    <View
+        android:id="@+id/view"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:background="@color/colorAccentDark"
+        app:layout_constraintBottom_toBottomOf="@id/guideline2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
 
     <TextView
         android:id="@+id/titleTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp"
         android:layout_marginTop="8dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Display1"
+        app:layout_constraintBottom_toTopOf="@+id/guideline2"
         app:layout_constraintStart_toStartOf="@+id/guideline"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="Movie Title"/>
+        app:layout_constraintTop_toTopOf="@+id/view"
+        tools:text="Movie Title" />
 
     <TextView
         android:id="@+id/dateTextView"
@@ -28,38 +42,78 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        app:layout_constraintStart_toStartOf="@+id/guideline"
-        app:layout_constraintTop_toBottomOf="@+id/titleTextView"
-        tools:text="2001"/>
+        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+        app:layout_constraintStart_toStartOf="@+id/verticalHalfGuideline"
+        app:layout_constraintTop_toTopOf="@+id/guideline2"
+        tools:text="2001" />
 
     <TextView
         android:id="@+id/durationTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        app:layout_constraintStart_toStartOf="@+id/guideline"
+        android:textAppearance="@style/TextAppearance.AppCompat.Title.Italic"
+        app:layout_constraintStart_toStartOf="@+id/dateTextView"
         app:layout_constraintTop_toBottomOf="@+id/dateTextView"
-        tools:text="120min"/>
+        tools:text="130min" />
 
     <TextView
         android:id="@+id/voteTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        app:layout_constraintStart_toStartOf="@+id/guideline"
+        android:textAppearance="@style/TextAppearance.AppCompat.Caption.Dark"
+        app:layout_constraintStart_toStartOf="@+id/durationTextView"
         app:layout_constraintTop_toBottomOf="@+id/durationTextView"
-        tools:text="8/10"/>
+        tools:text="8/10" />
 
     <TextView
         android:id="@+id/synopsisTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="15dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/details_right_padding"
+        android:layout_marginTop="24dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/guideline"
-        app:layout_constraintTop_toBottomOf="@+id/voteTextView"
+        app:layout_constraintTop_toTopOf="@+id/barrier"
         tools:text="Movie very long plot description." />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.2" />
+
+    <ImageView
+        android:id="@+id/detailsPosterImageView"
+        android:transitionName="movie_poster_transition_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="8dp"
+        android:adjustViewBounds="true"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/movies_poster_image_default_content_desc"
+        app:layout_constraintEnd_toStartOf="@+id/verticalHalfGuideline"
+        app:layout_constraintStart_toStartOf="@+id/guideline"
+        app:layout_constraintTop_toTopOf="@+id/guideline2"
+        app:srcCompat="@mipmap/ic_launcher" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/verticalHalfGuideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
+
+    <android.support.constraint.Barrier
+        android:id="@+id/barrier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="detailsPosterImageView,voteTextView"
+        tools:layout_editor_absoluteY="141dp" />
 
 </android.support.constraint.ConstraintLayout>
