@@ -18,8 +18,8 @@ public class Movie implements Parcelable {
     private final String synopsis;
     private final double voteAverage;
     private final String posterURLString;
-    private final List<MovieTrailer> trailers;
-    private final List<MovieReview> reviews;
+    private List<MovieTrailer> trailers;
+    private List<MovieReview> reviews;
 
     public Movie(int id, String title, String date, String synopsis, double voteAverage, String posterURLString) {
         this.id = id;
@@ -33,18 +33,20 @@ public class Movie implements Parcelable {
         this.reviews = new ArrayList<>();
     }
 
+
+
     /**
-     * add movie trailer
+     * add movie trailer list
      */
-    public void addTrailer(MovieTrailer trailer) {
-        trailers.add(trailer);
+    public void addTrailers(List<MovieTrailer> trailers) {
+        this.trailers = trailers;
     }
 
     /**
-     * add movie review
+     * add movie review list
      */
-    public void addReview(MovieReview review) {
-        reviews.add(review);
+    public void addReviews(List<MovieReview> reviews) {
+        this.reviews = reviews;
     }
 
     /**
@@ -87,6 +89,20 @@ public class Movie implements Parcelable {
      */
     public String getPosterURLPathString() {
         return posterURLString;
+    }
+
+    /**
+     * returns movie's trailer list
+     */
+    public List<MovieTrailer> getTrailers() {
+        return trailers;
+    }
+
+    /**
+     * returns movie's review list
+     */
+    public List<MovieReview> getReviews() {
+        return reviews;
     }
 
     @Override

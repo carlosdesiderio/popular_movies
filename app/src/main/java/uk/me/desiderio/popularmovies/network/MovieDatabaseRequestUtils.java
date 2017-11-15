@@ -29,6 +29,35 @@ public class MovieDatabaseRequestUtils {
     private static final String IMAGE_BASE_URL_STRING = "http://image.tmdb.org/t/p/";
     private static final String IMAGE_SIZE_185_PATH = "w185";
 
+    // movie id to be provided as argument
+    private static final String VIDEO_URL_PATH_STRING = "%1$s/videos";
+    private static final String REVIEWS_URL_PATH_STRING = "%1$s/reviews";
+
+    /**
+     * Provides Movies DB endpoint to retrieve list of trailer of the movie identify by its argument
+     */
+    public static URL getMovieTrailersUrl(String movieId) {
+        String videoUrlPath = String.format(VIDEO_URL_PATH_STRING, movieId);
+        Uri uri = Uri.parse(BASE_URL_STRING).buildUpon()
+                .appendEncodedPath(videoUrlPath)
+                .appendQueryParameter(API_KEY_QUERY_NAME, API_KEY)
+                .build();
+
+        return getUrlFromURI(uri);
+    }
+
+    /**
+     * Provides Movies DB endpoint to retrieve reviews about the movie identify by its argument
+     */
+    public static URL getMovieReviewsUrl(String movieId) {
+        String reviewsUrlPath = String.format(REVIEWS_URL_PATH_STRING, movieId);
+        Uri uri = Uri.parse(BASE_URL_STRING).buildUpon()
+                .appendEncodedPath(reviewsUrlPath)
+                .appendQueryParameter(API_KEY_QUERY_NAME, API_KEY)
+                .build();
+
+        return getUrlFromURI(uri);
+    }
 
     /**
      * Provides Movies DB endpoint to request the Poster Image of the movie identify by argument provided
