@@ -5,7 +5,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -30,18 +29,14 @@ public class DetailsActivity extends AppCompatActivity {
 
         TextView titleTextView = findViewById(R.id.titleTextView);
         TextView dateTextView = findViewById(R.id.dateTextView);
-        TextView durationTextView = findViewById(R.id.durationTextView);
-        durationTextView.setVisibility(View.GONE);
         TextView voteTextView = findViewById(R.id.voteTextView);
         TextView synopsisTextView = findViewById(R.id.synopsisTextView);
         ImageView posterImageView = findViewById(R.id.detailsPosterImageView);
-
 
         Picasso.with(this).load(uri).into(posterImageView);
 
         titleTextView.setText(movie.getTitle());
         dateTextView.setText(releaseYear);
-
         voteTextView.setText(getVoteAverageString(movie.getVoteAverage()));
         synopsisTextView.setText(movie.getSynopsis());
     }
@@ -49,7 +44,7 @@ public class DetailsActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            // responds to the Up/Home button
+            // stars return activity animation on the Up/Home button been selected
             case android.R.id.home:
                 supportFinishAfterTransition();
                 return true;
@@ -58,7 +53,7 @@ public class DetailsActivity extends AppCompatActivity {
     }
 
     private String getVoteAverageString(double vote) {
-        return String.valueOf(vote) + "/10";
+        return String.valueOf(vote) + getString(R.string.vote_average_denominator_suffix);
     }
 
 }

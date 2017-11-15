@@ -20,12 +20,6 @@ import uk.me.desiderio.popularmovies.network.MovieDatabaseRequestUtils;
 
 public class MainActivity extends AppCompatActivity implements MovieAdapter.OnItemClickListener {
 
-    /*TODO implement Picasso .placeholder(R.drawable.user_placeholder)
-    .error(R.drawable.user_placeholder_error)*/
-
-    // TODO implement saved instance state
-
-    private static final String TAG = MainActivity.class.getSimpleName();
     private MovieAdapter adapter;
     private View emptyStateView;
 
@@ -34,7 +28,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnIt
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // instanciates & sets RecyclerView
+        // instantiates & sets RecyclerView
         RecyclerView recyclerView = findViewById(R.id.movie_list_recycler_view);
         emptyStateView = findViewById(R.id.empty_state_view);
 

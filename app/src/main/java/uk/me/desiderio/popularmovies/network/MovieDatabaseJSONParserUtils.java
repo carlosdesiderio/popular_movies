@@ -1,7 +1,5 @@
 package uk.me.desiderio.popularmovies.network;
 
-import android.util.Log;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -17,8 +15,6 @@ import uk.me.desiderio.popularmovies.data.Movie;
 
 public class MovieDatabaseJSONParserUtils {
 
-    private static final String TAG = MovieDatabaseJSONParserUtils.class.getSimpleName();
-
     private static final String NODE_NAME_ID = "id";
     private static final String NODE_NAME_RESULTS = "results";
     private static final String NODE_NAME_TITLE = "original_title";
@@ -28,15 +24,13 @@ public class MovieDatabaseJSONParserUtils {
     private static final String NODE_NAME_OVERVIEW = "overview";
 
     /**
-     * Parses Movies DB's JSON request response into a set of {@Movie} objects
+     * Parses Movies DB's JSON request response into a set of {@link Movie} objects
      */
     public static List<Movie> parseJsonString(String jsonString) throws JSONException {
         // holds all the result child nodes
         List<Movie> movies = new ArrayList<>();
 
         JSONObject moviesJson = new JSONObject(jsonString);
-
-        //TODO : ADD ERROR HANDLING
 
         JSONArray moviesArray = moviesJson.getJSONArray(NODE_NAME_RESULTS);
 
@@ -50,7 +44,7 @@ public class MovieDatabaseJSONParserUtils {
             double voteAverage = movieJSONObject.getDouble(NODE_NAME_VOTE_AVERAGE);
             String posterUrlPath = movieJSONObject.getString(NODE_NAME_POSTER_PATH);
 
-            Movie movie = new Movie(id, title, date, 0, synopsis, voteAverage, posterUrlPath, null);
+            Movie movie = new Movie(id, title, date, synopsis, voteAverage, posterUrlPath);
             movies.add(movie);
         }
 

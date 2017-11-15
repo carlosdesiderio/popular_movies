@@ -47,8 +47,6 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
         final Uri imageUri = MovieDatabaseRequestUtils.getMoviePosterUri(movie.getPosterURLPathString());
         Log.d(TAG, "onBindViewHolder :: image uri: " + imageUri.toString());
         Picasso.with(holder.itemView.getContext()).load(imageUri).into(holder.posterImageView);
-        // TODO check this satisfies the link error
-        holder.posterImageView.setContentDescription(movie.getTitle() + " Poster");
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

@@ -3,9 +3,6 @@ package uk.me.desiderio.popularmovies.data;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Data object class to hold info about a movie instance
  */
@@ -15,21 +12,17 @@ public class Movie implements Parcelable {
     private final int id;
     private final String title;
     private final String date;
-    private final int duration;
     private final String synopsis;
     private final double voteAverage;
     private final String posterURLString;
-    private final List<String> trailers;
 
-    public Movie(int id, String title, String date, int duration, String synopsis, double voteAverage, String posterURLString, List<String> trailers) {
+    public Movie(int id, String title, String date, String synopsis, double voteAverage, String posterURLString) {
         this.id = id;
         this.title = title;
         this.date = date;
-        this.duration = duration;
         this.synopsis = synopsis;
         this.voteAverage = voteAverage;
         this.posterURLString = posterURLString;
-        this.trailers = trailers;
     }
 
     /**
@@ -54,13 +47,6 @@ public class Movie implements Parcelable {
     }
 
     /**
-     * returns movie's duration in minutes as a string
-     */
-    public int getDuration() {
-        return duration;
-    }
-
-    /**
      * returns movie's plot synopsis as a String
      */
     public String getSynopsis() {
@@ -81,13 +67,6 @@ public class Movie implements Parcelable {
         return posterURLString;
     }
 
-    /**
-     * returns movie's trailer urls as list of strings
-     */
-    public List<String> getTrailers() {
-        return trailers;
-    }
-
     @Override
     public int describeContents() {
         return 0;
@@ -97,16 +76,9 @@ public class Movie implements Parcelable {
         this.id = in.readInt();
         this.title = in.readString();
         this.date = in.readString();
-        this.duration = in.readInt();
         this.synopsis = in.readString();
         this.voteAverage = in.readDouble();
         this.posterURLString = in.readString();
-        if (in.readByte() == 0x01) {
-            trailers = new ArrayList<>();
-            in.readList(trailers, String.class.getClassLoader());
-        } else {
-            trailers = null;
-        }
     }
 
     @Override
@@ -114,18 +86,12 @@ public class Movie implements Parcelable {
         parcel.writeInt(id);
         parcel.writeString(title);
         parcel.writeString(date);
-        parcel.writeInt(duration);
         parcel.writeString(synopsis);
         parcel.writeDouble(voteAverage);
         parcel.writeString(posterURLString);
-        if (trailers == null) {
-            parcel.writeByte((byte) (0x00));
-        } else {
-            parcel.writeByte((byte) (0x01));
-            parcel.writeList(trailers);
-        }
     }
 
+    @SuppressWarnings("unused")
     public static final Parcelable.Creator<Movie> CREATOR
             = new Parcelable.Creator<Movie>() {
         public Movie createFromParcel(Parcel in) {

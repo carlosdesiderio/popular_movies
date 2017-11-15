@@ -55,6 +55,7 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Title.Italic"
         app:layout_constraintStart_toStartOf="@+id/dateTextView"
         app:layout_constraintTop_toBottomOf="@+id/dateTextView"
+        android:visibility="gone"
         tools:text="130min" />
 
     <TextView
@@ -95,7 +96,7 @@
         android:layout_marginTop="8dp"
         android:adjustViewBounds="true"
         android:scaleType="centerCrop"
-        android:contentDescription="@string/movies_poster_image_default_content_desc"
+        android:contentDescription="@string/movies_poster_image_content_desc"
         app:layout_constraintEnd_toStartOf="@+id/verticalHalfGuideline"
         app:layout_constraintStart_toStartOf="@+id/guideline"
         app:layout_constraintTop_toTopOf="@+id/guideline2"
@@ -114,6 +115,7 @@
         android:layout_height="wrap_content"
         app:barrierDirection="bottom"
         app:constraint_referenced_ids="detailsPosterImageView,voteTextView"
+        tools:layout_editor_absoluteX="229dp"
         tools:layout_editor_absoluteY="141dp" />
 
 </android.support.constraint.ConstraintLayout>

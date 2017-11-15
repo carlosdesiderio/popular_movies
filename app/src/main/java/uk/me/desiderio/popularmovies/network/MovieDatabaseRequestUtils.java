@@ -28,17 +28,10 @@ public class MovieDatabaseRequestUtils {
 
     private static final String IMAGE_BASE_URL_STRING = "http://image.tmdb.org/t/p/";
     private static final String IMAGE_SIZE_185_PATH = "w185";
-    public static final String IMAGE_SIZE_92_PATH = "w92";
-    public static final String IMAGE_SIZE_154_PATH = "w154";
-    public static final String IMAGE_SIZE_342_PATH = "w342";
-    public static final String IMAGE_SIZE_500_PATH = "w500";
-    public static final String IMAGE_SIZE_780_PATH = "w780";
 
 
     /**
      * Provides Movies DB endpoint to request the Poster Image of the movie identify by argument provided
-     * @param String image id
-     * @return Uri Movie's Poster endpoint
      */
     public static Uri getMoviePosterUri(String imageNamePathString) {
         Uri uri = Uri.parse(IMAGE_BASE_URL_STRING).buildUpon()
