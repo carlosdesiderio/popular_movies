@@ -7,4 +7,6 @@
     <string name="menu_item_top_rated_movies">Top Rated Movies</string>
     <string name="movies_poster_image_content_desc">Movie\'s Poster Image</string>
     <string name="vote_average_denominator_suffix">/10</string>
+    <string name="details_list_heading_trailers">Trailers</string>
+    <string name="details_list_heading_reviews">Reviews</string>
 </resources>

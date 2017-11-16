@@ -5,13 +5,14 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 
@@ -25,6 +26,7 @@ public class DetailsActivity extends AppCompatActivity {
 
     public static final String EXTRA_MOVIE = "extra_movie";
     private Movie movie;
+    private DetailsAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +51,17 @@ public class DetailsActivity extends AppCompatActivity {
         voteTextView.setText(getVoteAverageString(movie.getVoteAverage()));
         synopsisTextView.setText(movie.getSynopsis());
 
+        // instantiates & sets RecyclerView
+        RecyclerView recyclerView = findViewById(R.id.detail_list_recycler_view);
+
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+
+        adapter = new DetailsAdapter(this);
+
+        recyclerView.setLayoutManager(linearLayoutManager);
+        recyclerView.setAdapter(adapter);
+
+        //TODO move out to own class file
         new MovieTrailersRequestAsyncTask().execute(String.valueOf(movie.getId()));
         new MovieReviewsRequestAsyncTask().execute(String.valueOf(movie.getId()));
     }
@@ -85,6 +98,7 @@ public class DetailsActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(List<MovieTrailer> movieTrailers) {
             movie.addTrailers(movieTrailers);
+            adapter.addTrailerData(movieTrailers);
         }
     }
 
@@ -100,13 +114,13 @@ public class DetailsActivity extends AppCompatActivity {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
             return null;
         }
 
         @Override
         protected void onPostExecute(List<MovieReview> movieReviews) {
             movie.addReviews(movieReviews);
+            adapter.addReviewData(movieReviews);
         }
     }
 

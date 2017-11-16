@@ -1,5 +1,7 @@
 <resources>
     <dimen name="details_left_padding">16dp</dimen>
-    <dimen name="details_right_padding">8dp</dimen>
-
+    <dimen name="details_right_padding">16dp</dimen>
+    <dimen name="play_icon_size">32dp</dimen>
+    <dimen name="play_icon_margin">8dp</dimen>
+    <dimen name="main_heading_background_height">120dp</dimen>
 </resources>
