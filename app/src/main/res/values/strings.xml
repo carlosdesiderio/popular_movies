@@ -9,4 +9,5 @@
     <string name="vote_average_denominator_suffix">/10</string>
     <string name="details_list_heading_trailers">Trailers</string>
     <string name="details_list_heading_reviews">Reviews</string>
+    <string name="youtube_url_string">http://www.youtube.com/watch?v=</string>
 </resources>

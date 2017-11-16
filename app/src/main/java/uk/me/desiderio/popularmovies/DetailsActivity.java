@@ -1,8 +1,8 @@
 package uk.me.desiderio.popularmovies;
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -13,16 +13,20 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-import java.net.URL;
 import java.util.List;
 
 import uk.me.desiderio.popularmovies.data.Movie;
 import uk.me.desiderio.popularmovies.data.MovieReview;
 import uk.me.desiderio.popularmovies.data.MovieTrailer;
-import uk.me.desiderio.popularmovies.network.MovieDatabaseJSONParserUtils;
 import uk.me.desiderio.popularmovies.network.MovieDatabaseRequestUtils;
+import uk.me.desiderio.popularmovies.task.MovieReviewsRequestAsyncTask;
+import uk.me.desiderio.popularmovies.task.MovieTrailersRequestAsyncTask;
 
-public class DetailsActivity extends AppCompatActivity {
+public class DetailsActivity extends AppCompatActivity
+        implements MovieReviewsRequestAsyncTask.AsyncTaskCompleteListener,
+        MovieTrailersRequestAsyncTask.AsyncTaskCompleteListener,
+        DetailsAdapter.OnItemClickListener {
+
 
     public static final String EXTRA_MOVIE = "extra_movie";
     private Movie movie;
@@ -57,13 +61,14 @@ public class DetailsActivity extends AppCompatActivity {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
 
         adapter = new DetailsAdapter(this);
+        adapter.registerListener(this);
 
         recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setAdapter(adapter);
 
-        //TODO move out to own class file
-        new MovieTrailersRequestAsyncTask().execute(String.valueOf(movie.getId()));
-        new MovieReviewsRequestAsyncTask().execute(String.valueOf(movie.getId()));
+        //TODO check connection before making request
+        new MovieTrailersRequestAsyncTask(this).execute(String.valueOf(movie.getId()));
+        new MovieReviewsRequestAsyncTask(this).execute(String.valueOf(movie.getId()));
     }
 
     @Override
@@ -81,47 +86,37 @@ public class DetailsActivity extends AppCompatActivity {
         return String.valueOf(vote) + getString(R.string.vote_average_denominator_suffix);
     }
 
-    public class MovieTrailersRequestAsyncTask extends AsyncTask<String, Void, List<MovieTrailer>> {
 
-        @Override
-        protected List<MovieTrailer> doInBackground(String... movieIds) {
-            URL url = MovieDatabaseRequestUtils.getMovieTrailersUrl(movieIds[0]);
-            try {
-                String response = MovieDatabaseRequestUtils.getResponseFromHttpUrl(url);
-                return MovieDatabaseJSONParserUtils.parseTrailerJsonString(response);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
+    @Override
+    public void onTrailerTaskComplete(List<MovieTrailer> trailers) {
+        movie.addTrailers(trailers);
+        adapter.addTrailerData(trailers);
+    }
 
-        @Override
-        protected void onPostExecute(List<MovieTrailer> movieTrailers) {
-            movie.addTrailers(movieTrailers);
-            adapter.addTrailerData(movieTrailers);
-        }
+    @Override
+    public void onReviewTaskComplete(List<MovieReview> reviews) {
+        movie.addReviews(reviews);
+        adapter.addReviewData(reviews);
     }
 
 
-    public class MovieReviewsRequestAsyncTask extends AsyncTask<String, Void, List<MovieReview>> {
-
-        @Override
-        protected List<MovieReview> doInBackground(String... movieIds) {
-            URL url = MovieDatabaseRequestUtils.getMovieReviewsUrl(movieIds[0]);
-            try {
-                String response = MovieDatabaseRequestUtils.getResponseFromHttpUrl(url);
-                return MovieDatabaseJSONParserUtils.parseReviewsJsonString(response);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(List<MovieReview> movieReviews) {
-            movie.addReviews(movieReviews);
-            adapter.addReviewData(movieReviews);
-        }
+    @Override
+    public void onReviewSelected(MovieReview review) {
+        Uri uri = Uri.parse(review.getUrl());
+        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+        startActivity(intent);
     }
 
+    @Override
+    public void onTrailerSelected(MovieTrailer trailer) {
+        Intent appIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + trailer.getKey()));
+        Intent webIntent = new Intent(Intent.ACTION_VIEW,
+                Uri.parse(getString(R.string.youtube_url_string) + trailer.getKey()));
+        try {
+            startActivity(appIntent);
+        } catch (ActivityNotFoundException ex) {
+            startActivity(webIntent);
+        }
+
+    }
 }

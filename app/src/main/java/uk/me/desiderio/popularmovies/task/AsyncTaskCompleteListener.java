@@ -5,5 +5,5 @@ package uk.me.desiderio.popularmovies.task;
  */
 
 public interface AsyncTaskCompleteListener<T> {
-    public void onTaskComplete(T result);
+    void onTaskComplete(T result);
 }

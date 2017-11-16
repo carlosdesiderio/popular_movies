@@ -10,7 +10,7 @@ import uk.me.desiderio.popularmovies.network.MovieDatabaseJSONParserUtils;
 import uk.me.desiderio.popularmovies.network.MovieDatabaseRequestUtils;
 
 /**
- * Created by desiderio on 15/11/2017.
+ * Task to request movie data asynchronously
  */
 
 public class MovieRequestAsyncTask extends AsyncTask<URL, Void, List<Movie>> {

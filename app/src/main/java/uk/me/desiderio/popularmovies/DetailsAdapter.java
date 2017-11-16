@@ -22,17 +22,14 @@ import uk.me.desiderio.popularmovies.data.MovieTrailer;
 
 public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({HEADING_ITEM_TYPE, TRAILER_ITEM_TYPE, REVIEW_ITEM_TYPE})
-    public @interface ViewType {}
 
     private static final int HEADING_ITEM_TYPE = 1;
     private static final int TRAILER_ITEM_TYPE = 2;
     private static final int REVIEW_ITEM_TYPE = 3;
+    private OnItemClickListener listener;
     private List<Object> data = new ArrayList<>();
     private Context context;
-
-    public DetailsAdapter(Context context) {
+    DetailsAdapter(Context context) {
         this.context = context;
     }
 
@@ -64,14 +61,30 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 stringViewHolder.headingTextView.setText(headingLabel);
                 break;
             case REVIEW_ITEM_TYPE:
-                MovieReview review = (MovieReview) data.get(position);
+                final MovieReview review = (MovieReview) data.get(position);
                 ReviewViewHolder reviewViewHolder = (ReviewViewHolder) holder;
                 reviewViewHolder.contentTextView.setText(review.getContent());
+                reviewViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        if (listener != null) {
+                            listener.onReviewSelected(review);
+                        }
+                    }
+                });
                 break;
             case TRAILER_ITEM_TYPE:
-                MovieTrailer trailer = (MovieTrailer) data.get(position);
+                final MovieTrailer trailer = (MovieTrailer) data.get(position);
                 TrailerViewHolder trailerViewHolder = (TrailerViewHolder) holder;
                 trailerViewHolder.nameTextView.setText(trailer.getName());
+                trailerViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        if (listener != null) {
+                            listener.onTrailerSelected(trailer);
+                        }
+                    }
+                });
                 break;
         }
     }
@@ -81,18 +94,22 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         notifyDataSetChanged();
     }
 
-    public void addTrailerData(List<MovieTrailer> trailers) {
+    void addTrailerData(List<MovieTrailer> trailers) {
         if (trailers != null && trailers.size() > 0) {
             this.data.add(context.getString(R.string.details_list_heading_trailers));
             addData(trailers);
         }
     }
 
-    public void addReviewData(List<MovieReview> reviews) {
+    void addReviewData(List<MovieReview> reviews) {
         if (reviews != null && reviews.size() > 0) {
             this.data.add(context.getString(R.string.details_list_heading_reviews));
             addData(reviews);
         }
+    }
+
+    void registerListener(OnItemClickListener listener) {
+        this.listener = listener;
     }
 
     @Override
@@ -117,29 +134,40 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return 0;
     }
 
-    public class HeadingViewHolder extends RecyclerView.ViewHolder {
-        public TextView headingTextView;
+    public interface OnItemClickListener {
+        void onReviewSelected(MovieReview review);
 
-        public HeadingViewHolder(View itemView) {
+        void onTrailerSelected(MovieTrailer trailer);
+    }
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({HEADING_ITEM_TYPE, TRAILER_ITEM_TYPE, REVIEW_ITEM_TYPE})
+    @interface ViewType {
+    }
+
+    public class HeadingViewHolder extends RecyclerView.ViewHolder {
+        TextView headingTextView;
+
+        HeadingViewHolder(View itemView) {
             super(itemView);
             headingTextView = itemView.findViewById(R.id.heading_content_text_view);
         }
     }
 
     public class TrailerViewHolder extends RecyclerView.ViewHolder {
-        public TextView nameTextView;
+        TextView nameTextView;
 
-        public TrailerViewHolder(View itemView) {
+        TrailerViewHolder(View itemView) {
             super(itemView);
             nameTextView = itemView.findViewById(R.id.trailer_name_text_view);
         }
     }
 
     public class ReviewViewHolder extends RecyclerView.ViewHolder {
-        public TextView contentTextView;
+        TextView contentTextView;
 
 
-        public ReviewViewHolder(View itemView) {
+        ReviewViewHolder(View itemView) {
             super(itemView);
             contentTextView = itemView.findViewById(R.id.review_content_text_view);
         }
