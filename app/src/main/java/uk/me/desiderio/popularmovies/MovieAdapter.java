@@ -1,5 +1,6 @@
 package uk.me.desiderio.popularmovies;
 
+import android.database.Cursor;
 import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -13,6 +14,7 @@ import com.squareup.picasso.Picasso;
 import java.util.List;
 
 import uk.me.desiderio.popularmovies.data.Movie;
+import uk.me.desiderio.popularmovies.data.MoviesContract.MoviesEntry;
 import uk.me.desiderio.popularmovies.network.MovieDatabaseRequestUtils;
 
 /**
@@ -27,13 +29,8 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
         void onItemClick(Movie movie, View sharedView);
     }
 
-
-    private List<Movie> movies;
+    private Cursor moviesCursor;
     private OnItemClickListener onItemClickListener;
-
-
-    public MovieAdapter() {
-    }
 
     @Override
     public MovieViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -43,8 +40,14 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
 
     @Override
     public void onBindViewHolder(final MovieViewHolder holder, int position) {
-        final Movie movie = movies.get(position);
+        if(!moviesCursor.moveToPosition(position)) {
+            return;
+        }
+
+        final Movie movie = getMovieObjectFromCursor();
+
         final Uri imageUri = MovieDatabaseRequestUtils.getMoviePosterUri(movie.getPosterURLPathString());
+
         Log.d(TAG, "onBindViewHolder :: image uri: " + imageUri.toString());
         Picasso.with(holder.itemView.getContext()).load(imageUri).into(holder.posterImageView);
         holder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -57,16 +60,28 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
         });
     }
 
+    // TODO revise this after adding the provider
+    private Movie getMovieObjectFromCursor() {
+        int id = moviesCursor.getInt(moviesCursor.getColumnIndex(MoviesEntry.COLUMN_MOVIE_ID));
+        String title = moviesCursor.getString(moviesCursor.getColumnIndex(MoviesEntry.COLUMN_TITLE));
+        String date = moviesCursor.getString(moviesCursor.getColumnIndex(MoviesEntry.COLUMN_DATE));
+        String synopsys = moviesCursor.getString(moviesCursor.getColumnIndex(MoviesEntry.COLUMN_SYNOPSIS));
+        double voteAverage = moviesCursor.getDouble(moviesCursor.getColumnIndex(MoviesEntry.COLUMN_VOTE_AVERAGE));
+        String moviePosterUri = moviesCursor.getString(moviesCursor.getColumnIndex(MoviesEntry.COLUMN_POSTER_URL));
+
+        return new Movie(id, title, date, synopsys, voteAverage, moviePosterUri);
+    }
+
     @Override
     public int getItemCount() {
-        if (movies != null) {
-            return movies.size();
+        if (moviesCursor != null) {
+            return moviesCursor.getCount();
         }
         return 0;
     }
 
-    public void setData(List<Movie> movies) {
-        this.movies = movies;
+    public void setData(Cursor moviesCursor) {
+        this.moviesCursor = moviesCursor;
         notifyDataSetChanged();
     }
 
@@ -82,4 +97,6 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
             this.posterImageView = itemView.findViewById(R.id.movie_poster_image_view);
         }
     }
+
+
 }
