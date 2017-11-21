@@ -1,5 +1,6 @@
 package uk.me.desiderio.popularmovies.network;
 
+import android.content.ContentValues;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -12,12 +13,15 @@ import java.util.List;
 import uk.me.desiderio.popularmovies.data.Movie;
 import uk.me.desiderio.popularmovies.data.MovieReview;
 import uk.me.desiderio.popularmovies.data.MovieTrailer;
+import uk.me.desiderio.popularmovies.data.MoviesContract;
 
 /**
  * Utility class to hold setting for the parsing of "The Movie Database" JSON response
  */
 
 public class MovieDatabaseJSONParserUtils {
+
+    private static final String TAG = MovieDatabaseJSONParserUtils.class.getSimpleName();
 
     private static final String NODE_NAME_ID = "id";
     private static final String NODE_NAME_RESULTS = "results";
@@ -40,15 +44,15 @@ public class MovieDatabaseJSONParserUtils {
     /**
      * Parses Movies DB's JSON request response into a set of {@link Movie} objects
      */
-    public static List<Movie> parseJsonString(String jsonString) throws JSONException {
-        // holds all the result child nodes
-        List<Movie> movies = new ArrayList<>();
-
+    public static ContentValues[]  parseMovieJsonString(String jsonString) throws JSONException {
         JSONObject moviesJson = new JSONObject(jsonString);
 
         JSONArray moviesArray = moviesJson.getJSONArray(NODE_NAME_RESULTS);
 
+        ContentValues[] valuesArray = new ContentValues[moviesArray.length()];
         for (int i = 0; i < moviesArray.length(); i++) {
+            ContentValues values = new ContentValues();
+
             JSONObject movieJSONObject = moviesArray.getJSONObject(i);
 
             int id = movieJSONObject.getInt(NODE_NAME_ID);
@@ -58,61 +62,75 @@ public class MovieDatabaseJSONParserUtils {
             double voteAverage = movieJSONObject.getDouble(NODE_NAME_VOTE_AVERAGE);
             String posterUrlPath = movieJSONObject.getString(NODE_NAME_POSTER_PATH);
 
-            Movie movie = new Movie(id, title, date, synopsis, voteAverage, posterUrlPath);
-            Log.d("PARSE", " >>>>>> " + MovieDatabaseRequestUtils.getMovieReviewsUrl(String.valueOf(id)).toString());
-            movies.add(movie);
+            values.put(MoviesContract.MoviesEntry.COLUMN_MOVIE_ID, id);
+            values.put(MoviesContract.MoviesEntry.COLUMN_TITLE, title);
+            values.put(MoviesContract.MoviesEntry.COLUMN_DATE, date);
+            values.put(MoviesContract.MoviesEntry.COLUMN_SYNOPSIS, synopsis);
+            values.put(MoviesContract.MoviesEntry.COLUMN_VOTE_AVERAGE, voteAverage);
+            values.put(MoviesContract.MoviesEntry.COLUMN_POSTER_URL, posterUrlPath);
+
+            valuesArray[i] = values;
+
+            Log.d(TAG, "Movie parsed: >> " +  title);
         }
 
-        return movies;
+        return valuesArray;
     }
 
-    public static List<MovieTrailer> parseTrailerJsonString(String jsonString) throws JSONException  {
-        List<MovieTrailer> trailers = new ArrayList<>();
-
+    public static ContentValues[] parseTrailerJsonString(String jsonString) throws JSONException  {
         JSONObject trailersJson = new JSONObject(jsonString);
 
         JSONArray trailersArray = trailersJson.getJSONArray(NODE_NAME_RESULTS);
 
+        ContentValues[] valuesList = new ContentValues[trailersArray.length()];
         for (int i = 0; i < trailersArray.length(); i++) {
             JSONObject trailerJSONObject = trailersArray.getJSONObject(i);
             String site = trailerJSONObject.getString(NODE_NAME_SITE);
-                Log.d("PARSER", "trailers >> checking if available at YouTube");
+            Log.d("PARSER", "trailers >> checking if available at YouTube");
 
+            // only stores youtube trailers
             if(site.equals(NODE_SITE_YOUTUBE_FLAG)) {
+                ContentValues value = new ContentValues();
+
                 String name = trailerJSONObject.getString(NODE_NAME_NAME);
                 String id = trailerJSONObject.getString(NODE_NAME_ID);
                 String key = trailerJSONObject.getString(NODE_NAME_KEY);
 
-                MovieTrailer trailer = new MovieTrailer(id, name, key);
+                value.put(MoviesContract.TrailerEntry.COLUMN_TRAILER_ID, id);
+                value.put(MoviesContract.TrailerEntry.COLUMN_NAME, name);
+                value.put(MoviesContract.TrailerEntry.COLUMN_KEY, key);
 
-                trailers.add(trailer);
+                valuesList[i] = value;
 
-                Log.d("PARSER", "trailers added>> " + name);
+                Log.d(TAG, "Trailer parsed: >> " +  name);
             }
-
         }
-
-        return trailers;
+        return valuesList;
     }
 
-    public static List<MovieReview> parseReviewsJsonString(String jsonString) throws JSONException  {
-        List<MovieReview> reviews = new ArrayList<>();
-
+    public static ContentValues[] parseReviewsJsonString(String jsonString) throws JSONException  {
         JSONObject reviewsJson = new JSONObject(jsonString);
         JSONArray reviewsArray = reviewsJson.getJSONArray(NODE_NAME_RESULTS);
 
+        ContentValues[] valuesList = new ContentValues[reviewsArray.length()];
         for (int i = 0; i < reviewsArray.length(); i++) {
+            ContentValues values = new ContentValues();
+
             JSONObject reviewsJSONObject = reviewsArray.getJSONObject(i);
             String id = reviewsJSONObject.getString(NODE_NAME_ID);
             String author = reviewsJSONObject.getString(NODE_NAME_AUTHOR);
             String content = reviewsJSONObject.getString(NODE_NAME_CONTENT);
             String url = reviewsJSONObject.getString(NODE_NAME_URL);
 
-            MovieReview review = new MovieReview(id, author,content, url);
-            reviews.add(review);
+            values.put(MoviesContract.ReviewEntry.COLUMN_REVIEW_ID, id);
+            values.put(MoviesContract.ReviewEntry.COLUMN_AUTHOR, author);
+            values.put(MoviesContract.ReviewEntry.COLUMN_CONTENT, content);
+            values.put(MoviesContract.ReviewEntry.COLUMN_URL, url);
 
-            Log.d("PARSER", "review added by >> " + author);
+            valuesList[i] = values;
+
+            Log.d(TAG, "Review parsed: >> " + author);
         }
-        return reviews;
+        return valuesList;
     }
 }

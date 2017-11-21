@@ -15,7 +15,7 @@ import uk.me.desiderio.popularmovies.data.MoviesContract.TrailerEntry;
 public class MovieDBHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "movies.db";
-    private static final int DATABASE_VERSION = 8;
+    private static final int DATABASE_VERSION = 10;
 
     public MovieDBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -25,12 +25,14 @@ public class MovieDBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
 
         final String SQL_CREATE_MOVIES_TABLE = "CREATE TABLE " + MoviesEntry.TABLE_NAME + " (" +
-                MoviesEntry.COLUMN_MOVIE_ID + " INTEGER PRIMARY KEY NOT NULl, " +
+                MoviesEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                MoviesEntry.COLUMN_MOVIE_ID + " INTEGER NOT NULl, " +
                 MoviesEntry.COLUMN_TITLE + " TEXT NOT NULL, " +
                 MoviesEntry.COLUMN_DATE + " TEXT NOT NULL, " +
                 MoviesEntry.COLUMN_SYNOPSIS + " TEXT NOT NULL, " +
                 MoviesEntry.COLUMN_VOTE_AVERAGE + " REAL NOT NULL, " +
                 MoviesEntry.COLUMN_POSTER_URL + " TEXT NOT NULL, " +
+                MoviesEntry.COLUMN_FEED_TYPE + " TEXT NOT NULL, " +
                 " UNIQUE (" + MoviesEntry.COLUMN_MOVIE_ID + ") ON CONFLICT REPLACE);";
 
         final String SQL_CREATE_TRAILER_TABLE = "CREATE TABLE " + TrailerEntry.TABLE_NAME + "(" +

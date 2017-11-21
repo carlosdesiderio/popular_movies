@@ -28,6 +28,13 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
+        <provider
+            android:authorities="uk.me.desiderio.popularmovies"
+            android:name=".data.MovieContentProvider"
+            android:exported="false" />
+        <service
+            android:name=".task.MoviesIntentService"
+            android:exported="false" />
     </application>
 
 </manifest>
