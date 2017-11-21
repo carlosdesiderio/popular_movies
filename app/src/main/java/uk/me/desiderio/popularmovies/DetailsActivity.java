@@ -1,47 +1,40 @@
 package uk.me.desiderio.popularmovies;
 
+
 import android.content.ActivityNotFoundException;
-import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-import java.util.List;
-
 import uk.me.desiderio.popularmovies.data.Movie;
-import uk.me.desiderio.popularmovies.data.MovieDBHelper;
-import uk.me.desiderio.popularmovies.data.MovieReview;
-import uk.me.desiderio.popularmovies.data.MovieTrailer;
-import uk.me.desiderio.popularmovies.data.MoviesContract;
 import uk.me.desiderio.popularmovies.data.MoviesContract.ReviewEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.TrailerEntry;
 import uk.me.desiderio.popularmovies.network.MovieDatabaseRequestUtils;
-import uk.me.desiderio.popularmovies.task.MovieReviewsRequestAsyncTask;
-import uk.me.desiderio.popularmovies.task.MovieTrailersRequestAsyncTask;
+import uk.me.desiderio.popularmovies.task.MoviesIntentService;
+import uk.me.desiderio.popularmovies.task.MoviesRequestTasks;
 
 public class DetailsActivity extends AppCompatActivity
-        implements MovieReviewsRequestAsyncTask.AsyncTaskCompleteListener,
-        MovieTrailersRequestAsyncTask.AsyncTaskCompleteListener,
-        DetailsAdapter.OnItemClickListener {
+        implements DetailsAdapter.OnItemClickListener {
 
     public static final String EXTRA_MOVIE = "extra_movie";
-    public static final String EXTRA_MOVIE_DB_ID = "extra_movie_database_id";
 
-    private Movie movie;
-    private int movieDatabaseId;
+    private static final int TRAILERS_LOADER_ID = 500;
+    private static final int REVIEWS_LOADER_ID = 600;
+
     private DetailsAdapter adapter;
-    private SQLiteDatabase database;
+    private Movie movie;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +43,8 @@ public class DetailsActivity extends AppCompatActivity
 
         Intent intent = getIntent();
         // TODO check if this have to be removed and rely on provider only
-        movie = intent.getParcelableExtra(EXTRA_MOVIE);
-        movieDatabaseId = intent.getIntExtra(EXTRA_MOVIE_DB_ID, -1);
+        Bundle movieBundle = intent.getExtras();
+        movie = movieBundle.getParcelable(EXTRA_MOVIE);
         Uri uri = MovieDatabaseRequestUtils.getMoviePosterUri(movie.getPosterURLPathString());
         String releaseYear = movie.getDate().substring(0, movie.getDate().indexOf("-"));
 
@@ -79,16 +72,13 @@ public class DetailsActivity extends AppCompatActivity
         recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setAdapter(adapter);
 
-        MovieDBHelper helper = new MovieDBHelper(this);
-        database = helper.getWritableDatabase();
-        requestData();
-    }
-
-    private void requestData() {
-        //TODO check connection before making request
         adapter.resetData();
-        new MovieTrailersRequestAsyncTask(this).execute(String.valueOf(movie.getId()));
-        new MovieReviewsRequestAsyncTask(this).execute(String.valueOf(movie.getId()));
+
+        TrailerLoaderCallbacks trailerLoaderCallbacks = new TrailerLoaderCallbacks();
+        ReviewLoaderCallbacks reviewLoaderCallbacks = new ReviewLoaderCallbacks();
+
+        getSupportLoaderManager().initLoader(TRAILERS_LOADER_ID, movieBundle, trailerLoaderCallbacks);
+        getSupportLoaderManager().initLoader(REVIEWS_LOADER_ID, movieBundle, reviewLoaderCallbacks);
     }
 
     @Override
@@ -102,50 +92,18 @@ public class DetailsActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
-    private String getVoteAverageString(double vote) {
-        return String.valueOf(vote) + getString(R.string.vote_average_denominator_suffix);
-    }
-
     @Override
-    public void onTrailerTaskComplete(List<MovieTrailer> trailers) {
-        // TODO revise if parser could insert data directly into database
-        if(trailers == null) {
-            return;
-        }
-        movie.addTrailers(trailers);
-        for(MovieTrailer trailer : trailers) {
-            insertTrailerInDatabase(trailer);
-        }
-        Cursor trailersCursor = getAllTrailers(String.valueOf(movieDatabaseId));
-        adapter.addMovieTrailerData(trailersCursor);
-    }
-
-    @Override
-    public void onReviewTaskComplete(List<MovieReview> reviews) {
-        // TODO revise if parser could insert data directly into database
-        if(reviews == null) {
-            return;
-        }
-        movie.addReviews(reviews);
-        for(MovieReview review : reviews) {
-            insertReviewsInDatabase(review);
-        }
-        Cursor reviewsCursor = getAllReviews(String.valueOf(movieDatabaseId));
-        adapter.addMovieReviewData(reviewsCursor);
-    }
-
-    @Override
-    public void onReviewSelected(MovieReview review) {
-        Uri uri = Uri.parse(review.getUrl());
+    public void onReviewSelected(String reviewUrlString) {
+        Uri uri = Uri.parse(reviewUrlString);
         Intent intent = new Intent(Intent.ACTION_VIEW, uri);
         startActivity(intent);
     }
 
     @Override
-    public void onTrailerSelected(MovieTrailer trailer) {
-        Intent appIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + trailer.getKey()));
+    public void onTrailerSelected(String trailerKey) {
+        Intent appIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + trailerKey));
         Intent webIntent = new Intent(Intent.ACTION_VIEW,
-                Uri.parse(getString(R.string.youtube_url_string) + trailer.getKey()));
+                Uri.parse(getString(R.string.youtube_url_string) + trailerKey));
         try {
             startActivity(appIntent);
         } catch (ActivityNotFoundException ex) {
@@ -153,62 +111,87 @@ public class DetailsActivity extends AppCompatActivity
         }
     }
 
-    private void insertTrailerInDatabase(MovieTrailer trailer) {
-        ContentValues values = new ContentValues();
-
-        values.put(TrailerEntry.COLUMN_TRAILER_ID, trailer.getId());
-        values.put(TrailerEntry.COLUMN_NAME, trailer.getName());
-        values.put(TrailerEntry.COLUMN_KEY, trailer.getKey());
-        values.put(TrailerEntry.COLUMN_MOVIES_FOREING_KEY, movieDatabaseId);
-
-        long inserts = database.insert(TrailerEntry.TABLE_NAME, "", values);
-        Log.d("DETAILS", "===== TRAILERS DB Insert >> " + inserts);
+    private String getVoteAverageString(double vote) {
+        return String.valueOf(vote) + getString(R.string.vote_average_denominator_suffix);
     }
 
-    private void insertReviewsInDatabase(MovieReview review) {
-        ContentValues values = new ContentValues();
-
-        values.put(ReviewEntry.COLUMN_REVIEW_ID, review.getId());
-        values.put(ReviewEntry.COLUMN_AUTHOR, review.getAuthor());
-        values.put(ReviewEntry.COLUMN_CONTENT, review.getContent());
-        values.put(ReviewEntry.COLUMN_URL, review.getUrl());
-        values.put(ReviewEntry.COLUMN_MOVIES_FOREING_KEY, movieDatabaseId);
-
-        long inserts = database.insert(ReviewEntry.TABLE_NAME, "", values);
-        Log.d("DETAILS", "===== REVIEWS DB Insert >> " + inserts);
+    private String getMovieIdString(Bundle bundle) {
+        Movie movie = bundle.getParcelable(EXTRA_MOVIE);
+        int movieId = movie.getId();
+        return String.valueOf(movieId);
     }
 
-    private Cursor getAllTrailers(String movieId) {
-        String selection = TrailerEntry.COLUMN_MOVIES_FOREING_KEY+ " = ?";
-        String[] selectionArgs = {
-                movieId
-        };
+    private class ReviewLoaderCallbacks implements LoaderManager.LoaderCallbacks<Cursor> {
+        String movieId;
 
-        Cursor cursor = database.query(MoviesContract.TrailerEntry.TABLE_NAME,
-                null,
-                selection,
-                selectionArgs,
-                null,
-                null,
-                null);
-        Log.d("DETAILS", "AllTrailers: " + cursor.getCount());
-        return cursor;
+        @Override
+        public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
+            movieId = getMovieIdString(bundle);
+            String selection = ReviewEntry.COLUMN_MOVIES_FOREING_KEY+ " = ?";
+            String[] selectionArgs = {
+                    movieId
+            };
+
+            return new CursorLoader(getApplicationContext(),
+                    ReviewEntry.CONTENT_URI,
+                    null,
+                    selection,
+                    selectionArgs,
+                    null);
+        }
+
+        @Override
+        public void onLoadFinished(Loader<Cursor> loader, Cursor reviewsCursor) {
+            if(reviewsCursor != null && reviewsCursor.getCount() > 0) {
+                adapter.swapReviewsCursor(reviewsCursor);
+            } else {
+                Intent intent = new Intent(DetailsActivity.this, MoviesIntentService.class);
+                intent.setAction(MoviesRequestTasks.ACTION_REQUEST_REVIEW_DATA);
+                intent.putExtra(MoviesIntentService.EXTRA_MOVIE_ID, movieId);
+                startService(intent);
+            }
+        }
+
+        @Override
+        public void onLoaderReset(Loader<Cursor> loader) {
+            adapter.swapReviewsCursor(null);
+        }
     }
 
-    private Cursor getAllReviews(String movieId) {
-        String selection = ReviewEntry.COLUMN_MOVIES_FOREING_KEY+ " = ?";
-        String[] selectionArgs = {
-                movieId
-        };
+    private class TrailerLoaderCallbacks implements LoaderManager.LoaderCallbacks<Cursor> {
+            String movieId;
 
-        Cursor cursor = database.query(MoviesContract.ReviewEntry.TABLE_NAME,
-                null,
-                selection,
-                selectionArgs,
-                null,
-                null,
-                null);
+        @Override
+        public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
+            movieId = getMovieIdString(bundle);
+            String selection = TrailerEntry.COLUMN_MOVIES_FOREING_KEY+ " = ?";
+            String[] selectionArgs = {
+                    movieId
+            };
 
-        return cursor;
+            return new CursorLoader(getApplicationContext(),
+                    TrailerEntry.CONTENT_URI,
+                    null,
+                    selection,
+                    selectionArgs,
+                    null);
+        }
+
+        @Override
+        public void onLoadFinished(Loader<Cursor> loader, Cursor trailersCursor) {
+            if(trailersCursor != null && trailersCursor.getCount() > 0) {
+                adapter.swapTrailersCursor(trailersCursor);
+            } else {
+                Intent intent = new Intent(DetailsActivity.this, MoviesIntentService.class);
+                intent.setAction(MoviesRequestTasks.ACTION_REQUEST_TRAILER_DATA);
+                intent.putExtra(MoviesIntentService.EXTRA_MOVIE_ID, movieId);
+                startService(intent);
+            }
+        }
+
+        @Override
+        public void onLoaderReset(Loader<Cursor> loader) {
+            adapter.swapTrailersCursor(null);
+        }
     }
 }

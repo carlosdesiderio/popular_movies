@@ -44,9 +44,13 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
             return;
         }
 
+        int id = moviesCursor.getInt(moviesCursor.getColumnIndex(MoviesEntry.COLUMN_MOVIE_ID));
+        String moviePosterUri = moviesCursor.getString(moviesCursor.getColumnIndex(MoviesEntry.COLUMN_POSTER_URL));
+
+        // todo remove this line when only the id is passed
         final Movie movie = getMovieObjectFromCursor();
 
-        final Uri imageUri = MovieDatabaseRequestUtils.getMoviePosterUri(movie.getPosterURLPathString());
+        final Uri imageUri = MovieDatabaseRequestUtils.getMoviePosterUri(moviePosterUri);
 
         Log.d(TAG, "onBindViewHolder :: image uri: " + imageUri.toString());
         Picasso.with(holder.itemView.getContext()).load(imageUri).into(holder.posterImageView);
@@ -80,7 +84,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
         return 0;
     }
 
-    public void setData(Cursor moviesCursor) {
+    public void swapCursor(Cursor moviesCursor) {
         this.moviesCursor = moviesCursor;
         notifyDataSetChanged();
     }
@@ -97,6 +101,4 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
             this.posterImageView = itemView.findViewById(R.id.movie_poster_image_view);
         }
     }
-
-
 }

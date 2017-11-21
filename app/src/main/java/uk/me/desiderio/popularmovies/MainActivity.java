@@ -1,41 +1,37 @@
 package uk.me.desiderio.popularmovies;
 
-import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
+import android.database.ContentObserver;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
-
-import java.net.URL;
-import java.util.List;
 
 import uk.me.desiderio.popularmovies.data.Movie;
-import uk.me.desiderio.popularmovies.data.MovieDBHelper;
 import uk.me.desiderio.popularmovies.data.MoviesContract.MoviesEntry;
-import uk.me.desiderio.popularmovies.network.MovieDatabaseRequestUtils;
-import uk.me.desiderio.popularmovies.task.AsyncTaskCompleteListener;
-import uk.me.desiderio.popularmovies.task.MovieRequestAsyncTask;
+import uk.me.desiderio.popularmovies.data.MoviesCursorWrapper;
+import uk.me.desiderio.popularmovies.network.MovieFeedType;
+import uk.me.desiderio.popularmovies.task.MoviesIntentService;
+import uk.me.desiderio.popularmovies.task.MoviesRequestTasks;
 
-public class MainActivity extends AppCompatActivity implements MovieAdapter.OnItemClickListener,
-        AsyncTaskCompleteListener<List<Movie>> {
+import static uk.me.desiderio.popularmovies.network.MovieFeedType.POPULAR_MOVIES_FEED;
 
-    // TODO implement suggesiton about connection receiver
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
+        MovieAdapter.OnItemClickListener {
+
+    private static final int MOVIE_LOADER_ID = 300;
 
     private MovieAdapter adapter;
     private View emptyStateView;
-    private SQLiteDatabase database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,15 +49,10 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnIt
 
         recyclerView.setLayoutManager(gridLayoutManager);
         recyclerView.setAdapter(adapter);
+        recyclerView.setHasFixedSize(true);
 
-        // show empty state view initialy
-        showEmptyStateView(true);
-
-        MovieDBHelper helper = new MovieDBHelper(this);
-        database = helper.getWritableDatabase();
-
-        // requests data & populates view
-        requestData(MovieDatabaseRequestUtils.getPopularMoviesUrl());
+        Bundle initialLoaderBundle = getMovieLoaderBundle(POPULAR_MOVIES_FEED);
+        getSupportLoaderManager().initLoader(MOVIE_LOADER_ID, initialLoaderBundle, this);
     }
 
     @Override
@@ -74,14 +65,26 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnIt
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.popular_movies_menu_item:
-                requestData(MovieDatabaseRequestUtils.getPopularMoviesUrl());
+                resetLoaderWithFeedType(POPULAR_MOVIES_FEED);
                 return true;
             case R.id.top_rated_movies_menu_item:
-                requestData(MovieDatabaseRequestUtils.getTopRatedMoviesUrl());
+                resetLoaderWithFeedType(uk.me.desiderio.popularmovies.network.MovieFeedType.TOP_RATED_MOVIES_FEED);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void resetLoaderWithFeedType(@MovieFeedType.FeedType String feedType) {
+        getSupportLoaderManager().restartLoader(MOVIE_LOADER_ID,
+                getMovieLoaderBundle(feedType),
+                this);
+    }
+
+    private Bundle getMovieLoaderBundle(@MovieFeedType.FeedType String feedType) {
+        Bundle bundle = new Bundle();
+        bundle.putString(MoviesIntentService.EXTRA_FEED_TYPE, feedType);
+        return bundle;
     }
 
     private void showEmptyStateView(boolean isVisible) {
@@ -92,29 +95,12 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnIt
         }
     }
 
-    private void requestData(URL url) {
-        if (isConnected()) {
-            new MovieRequestAsyncTask(this).execute(url);
-        } else {
-            Toast.makeText(this, getString(R.string.no_connection_message), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private boolean isConnected() {
-        ConnectivityManager cm =
-                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-    }
 
     @Override
     public void onItemClick(Movie movie, View sharedView) {
         Intent intent = new Intent(this, DetailsActivity.class);
         // passes data to the DetailsActivity
         intent.putExtra(DetailsActivity.EXTRA_MOVIE, movie);
-        //
-        intent.putExtra(DetailsActivity.EXTRA_MOVIE_DB_ID, movie.getId());
         // sets shared element activity transition
         ActivityOptionsCompat options = ActivityOptionsCompat.
                 makeSceneTransitionAnimation(this, sharedView, "movie_poster_transition_name");
@@ -122,48 +108,78 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnIt
     }
 
     @Override
-    public void onTaskComplete(List<Movie> movies) {
-        // shows different view state based on data presence
-        if (movies != null && movies.size() > 0) {
-            // TODO refractor parser when provider is in place. See if Movie object can be removed
-            insertAllMoviesInDatabase(movies);
-            Cursor cursor = getAllMovies();
-            Log.d("MAIN", "===== DB query count >> " + cursor.getCount());
-            adapter.setData(cursor);
+    public Loader<Cursor> onCreateLoader(int loaderId, final Bundle args) {
+        // TODO revise which fields are used then create Projection + cursor fields numbers consttant
+        return new AsyncTaskLoader<Cursor>(this) {
+
+            private final ContentObserver obs = new ContentObserver(new Handler()) {
+                @Override
+                public boolean deliverSelfNotifications() {
+                    return true;
+                }
+
+                @Override
+                public void onChange(boolean selfChange) {
+                    onContentChanged();
+                }
+            };
+
+            Cursor cursor;
+
+            @Override
+            protected void onStartLoading() {
+                if (cursor != null) {
+                    deliverResult(cursor);
+                } else {
+                    showEmptyStateView(true);
+                    forceLoad();
+                }
+            }
+
+            @Override
+            public Cursor loadInBackground() {
+                String feedType = args.getString(MoviesIntentService.EXTRA_FEED_TYPE);
+                String selection = MoviesEntry.COLUMN_FEED_TYPE + " = ?";
+                ;
+                String[] selectinArgs = {feedType};
+                Cursor cursor = getContentResolver().query(MoviesEntry.CONTENT_URI,
+                        null,
+                        selection,
+                        selectinArgs,
+                        null);
+                Cursor cursorWrapper = new MoviesCursorWrapper(cursor, feedType);
+                cursorWrapper.registerContentObserver(obs);
+                return cursorWrapper;
+            }
+
+            @Override
+            public void deliverResult(Cursor cursor) {
+                this.cursor = cursor;
+                super.deliverResult(cursor);
+            }
+        };
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        // data.getCount > 0
+        if (data != null && data.getCount() > 0) {
+            adapter.swapCursor(data);
             showEmptyStateView(false);
         } else {
-            adapter.setData(null);
-            showEmptyStateView(true);
+            MoviesCursorWrapper cursorWrapper = (MoviesCursorWrapper) data;
+            cursorWrapper.getFeedType();
+            Intent intent = new Intent(this, MoviesIntentService.class);
+            intent.setAction(MoviesRequestTasks.ACTION_REQUEST_MOVIE_DATA);
+            intent.putExtra(MoviesIntentService.EXTRA_FEED_TYPE, cursorWrapper.getFeedType().toString());
+            startService(intent);
         }
+
     }
 
-    private void insertAllMoviesInDatabase(List<Movie> movies) {
-        for(Movie movie : movies) {
-            insertMovieInDatabase(movie);
-        }
-    }
-
-    private void insertMovieInDatabase(Movie movie) {
-        ContentValues values = new ContentValues();
-
-        values.put(MoviesEntry.COLUMN_MOVIE_ID, movie.getId());
-        values.put(MoviesEntry.COLUMN_TITLE, movie.getTitle());
-        values.put(MoviesEntry.COLUMN_DATE, movie.getDate());
-        values.put(MoviesEntry.COLUMN_SYNOPSIS, movie.getSynopsis());
-        values.put(MoviesEntry.COLUMN_VOTE_AVERAGE, movie.getVoteAverage());
-        values.put(MoviesEntry.COLUMN_POSTER_URL, movie.getPosterURLPathString());
-
-        long inserts = database.insert(MoviesEntry.TABLE_NAME, "", values);
-        Log.d("MAIN", "===== DB Insert >> " + inserts);
-    }
-
-    private Cursor getAllMovies() {
-        return database.query(MoviesEntry.TABLE_NAME,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null);
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        adapter.swapCursor(null);
+        showEmptyStateView(true);
     }
 }

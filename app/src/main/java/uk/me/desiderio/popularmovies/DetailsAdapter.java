@@ -15,8 +15,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.me.desiderio.popularmovies.data.MovieReview;
-import uk.me.desiderio.popularmovies.data.MovieTrailer;
 import uk.me.desiderio.popularmovies.data.MoviesContract.ReviewEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.TrailerEntry;
 
@@ -26,9 +24,11 @@ import uk.me.desiderio.popularmovies.data.MoviesContract.TrailerEntry;
 
 public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
+    private static final String TAG = DetailsAdapter.class.getSimpleName();
+
     public interface OnItemClickListener {
-        void onReviewSelected(MovieReview review);
-        void onTrailerSelected(MovieTrailer trailer);
+        void onReviewSelected(String reviewUrlString);
+        void onTrailerSelected(String trailerKey);
     }
 
     @Retention(RetentionPolicy.SOURCE)
@@ -97,41 +97,48 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         switch (viewType) {
             case HEADING_ITEM_TYPE:
-                String headingLabel = labels.get(getItemDataPosition(position));
+                String headingLabel = labels.get(getItemDataOriginalPosition(position));
                 HeadingViewHolder stringViewHolder = (HeadingViewHolder) holder;
                 stringViewHolder.headingTextView.setText(headingLabel);
                 break;
             case REVIEW_ITEM_TYPE:
-                int reviewPosition = getItemDataPosition(position);
-                boolean hasPosition = reviewsCursor.moveToPosition(reviewPosition);
-                final MovieReview review = getMovieReviewFrom(reviewsCursor);
-                ReviewViewHolder reviewViewHolder = (ReviewViewHolder) holder;
-                if(review==null) return;
-                reviewViewHolder.contentTextView.setText(review.getContent());
-                reviewViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        if (listener != null) {
-                            listener.onReviewSelected(review);
+                int dataOriginalPosition = getItemDataOriginalPosition(position);
+                if (reviewsCursor.moveToPosition(dataOriginalPosition)) {
+
+                    String content = reviewsCursor.getString(reviewsCursor.getColumnIndex(ReviewEntry.COLUMN_CONTENT));
+                    final String url = reviewsCursor.getString(reviewsCursor.getColumnIndex(ReviewEntry.COLUMN_URL));
+
+                    ReviewViewHolder reviewViewHolder = (ReviewViewHolder) holder;
+
+                    reviewViewHolder.contentTextView.setText(content);
+                    reviewViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            if (listener != null) {
+                                listener.onReviewSelected(url);
+                            }
                         }
-                    }
-                });
+                    });
+                }
                 break;
             case TRAILER_ITEM_TYPE:
-                int trailerPosition = getItemDataPosition(position);
-                boolean hasPosition2 = trailersCursor.moveToPosition(trailerPosition);
-                final MovieTrailer trailer = getMovieTrailerFrom(trailersCursor);
-                TrailerViewHolder trailerViewHolder = (TrailerViewHolder) holder;
-                if(trailer==null) return;
-                trailerViewHolder.nameTextView.setText(trailer.getName());
-                trailerViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        if (listener != null) {
-                            listener.onTrailerSelected(trailer);
+                int trailerPosition = getItemDataOriginalPosition(position);
+                if(trailersCursor.moveToPosition(trailerPosition)) {
+
+                    String name = trailersCursor.getString(trailersCursor.getColumnIndex(TrailerEntry.COLUMN_NAME));
+                    final String key = trailersCursor.getString(trailersCursor.getColumnIndex(TrailerEntry.COLUMN_KEY));
+                    TrailerViewHolder trailerViewHolder = (TrailerViewHolder) holder;
+
+                    trailerViewHolder.nameTextView.setText(name);
+                    trailerViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            if (listener != null) {
+                                listener.onTrailerSelected(key);
+                            }
                         }
-                    }
-                });
+                    });
+                }
                 break;
         }
     }
@@ -155,36 +162,28 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         this.listener = listener;
     }
 
-    void addMovieTrailerData(Cursor trailersCursor) {
+    void swapTrailersCursor(Cursor trailersCursor) {
         if (trailersCursor != null && trailersCursor.getCount() > 0) {
             labels.add(context.getString(R.string.details_list_heading_trailers));
+            Log.d(TAG, "Swap Trailer Cursor :: Register Header View");
             registerDataTypeItem(HEADING_ITEM_TYPE, labels.size() - 1);
             this.trailersCursor = trailersCursor;
+            Log.d(TAG, "Swap Trailer Cursor :: Register " + trailersCursor.getCount() + " Trailer View Items");
             registerAllCursorDataItems(TRAILER_ITEM_TYPE, trailersCursor);
         }
         notifyDataSetChanged();
-
-        for (int i = 0; i < viewItemList.size(); i++) {
-            ViewItem item = viewItemList.get(i);
-            Log.d("CUSOR -----", "item type : " + item.getType() + " -- item original index: " + item.getOriginalIndex());
-        }
-        Log.d("CUSOR -----", "item type : =========================");
     }
 
-    void addMovieReviewData(Cursor reviewsCursor) {
+    void swapReviewsCursor(Cursor reviewsCursor) {
         if (reviewsCursor != null && reviewsCursor.getCount() > 0) {
             this.labels.add(context.getString(R.string.details_list_heading_reviews));
+            Log.d(TAG, "Swap Trailer Cursor :: Register Header View");
             registerDataTypeItem(HEADING_ITEM_TYPE, labels.size() - 1);
             this.reviewsCursor = reviewsCursor;
+            Log.d(TAG, "Swap Trailer Cursor :: Register " + reviewsCursor.getCount() + " Review View Items");
             registerAllCursorDataItems(REVIEW_ITEM_TYPE, reviewsCursor);
         }
         notifyDataSetChanged();
-
-        for (int i = 0; i < viewItemList.size(); i++) {
-            ViewItem item = viewItemList.get(i);
-            Log.d("CUSOR -----", "item type : " + item.getType() + " -- item original index: " + item.getOriginalIndex());
-        }
-        Log.d("CUSOR -----", "item type : =========================");
     }
 
     // TODO revise creational strategy: when to reset
@@ -206,24 +205,8 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
-    private int getItemDataPosition(int adapterPosition) {
+    private int getItemDataOriginalPosition(int adapterPosition) {
         return viewItemList.get(adapterPosition).getOriginalIndex();
-    }
-
-    private MovieReview getMovieReviewFrom(Cursor cursor) {
-        String id = cursor.getString(cursor.getColumnIndex(ReviewEntry.COLUMN_REVIEW_ID));
-        String author = cursor.getString(cursor.getColumnIndex(ReviewEntry.COLUMN_AUTHOR));
-        String content = cursor.getString(cursor.getColumnIndex(ReviewEntry.COLUMN_CONTENT));
-        String url = cursor.getString(cursor.getColumnIndex(ReviewEntry.COLUMN_URL));
-
-        return new MovieReview(id, author, content, url);
-    }
-    private MovieTrailer getMovieTrailerFrom(Cursor cursor) {
-        String id = cursor.getString(cursor.getColumnIndex(TrailerEntry.COLUMN_TRAILER_ID));
-        String name = cursor.getString(cursor.getColumnIndex(TrailerEntry.COLUMN_NAME));
-        String key = cursor.getString(cursor.getColumnIndex(TrailerEntry.COLUMN_KEY));
-
-        return new MovieTrailer(id, name, key);
     }
 
     public class HeadingViewHolder extends RecyclerView.ViewHolder {
