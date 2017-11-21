@@ -33,6 +33,7 @@ public class DetailsActivity extends AppCompatActivity
     private static final int TRAILERS_LOADER_ID = 500;
     private static final int REVIEWS_LOADER_ID = 600;
 
+    private RecyclerView recyclerView;
     private DetailsAdapter adapter;
     private Movie movie;
 
@@ -62,7 +63,7 @@ public class DetailsActivity extends AppCompatActivity
         synopsisTextView.setText(movie.getSynopsis());
 
         // instantiates & sets RecyclerView
-        RecyclerView recyclerView = findViewById(R.id.detail_list_recycler_view);
+        recyclerView = findViewById(R.id.detail_list_recycler_view);
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
 
@@ -79,6 +80,12 @@ public class DetailsActivity extends AppCompatActivity
 
         getSupportLoaderManager().initLoader(TRAILERS_LOADER_ID, movieBundle, trailerLoaderCallbacks);
         getSupportLoaderManager().initLoader(REVIEWS_LOADER_ID, movieBundle, reviewLoaderCallbacks);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        recyclerView.scrollToPosition(0);
     }
 
     @Override
