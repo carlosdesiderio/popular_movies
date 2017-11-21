@@ -7,12 +7,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import uk.me.desiderio.popularmovies.data.Movie;
-import uk.me.desiderio.popularmovies.data.MovieReview;
-import uk.me.desiderio.popularmovies.data.MovieTrailer;
 import uk.me.desiderio.popularmovies.data.MoviesContract;
 
 /**
