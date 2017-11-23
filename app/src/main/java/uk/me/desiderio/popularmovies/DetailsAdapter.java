@@ -3,6 +3,7 @@ package uk.me.desiderio.popularmovies;
 import android.content.Context;
 import android.database.Cursor;
 import android.support.annotation.IntDef;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -58,7 +59,7 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
-    private OnItemClickListener listener;
+    private OnItemClickListener itemClickListener;
     private Context context;
 
     private Cursor trailersCursor;
@@ -114,8 +115,8 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     reviewViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            if (listener != null) {
-                                listener.onReviewSelected(url);
+                            if (itemClickListener != null) {
+                                itemClickListener.onReviewSelected(url);
                             }
                         }
                     });
@@ -133,8 +134,8 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     trailerViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            if (listener != null) {
-                                listener.onTrailerSelected(key);
+                            if (itemClickListener != null) {
+                                itemClickListener.onTrailerSelected(key);
                             }
                         }
                     });
@@ -158,8 +159,20 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return 0;
     }
 
-    void registerListener(OnItemClickListener listener) {
-        this.listener = listener;
+    /**
+     * It returns the first trailer YouTube key
+     */
+    @Nullable
+    public String getVideoSharingKey() {
+        if(trailersCursor != null && trailersCursor.moveToPosition(0)) {
+            return trailersCursor.getString(trailersCursor.getColumnIndex(TrailerEntry.COLUMN_KEY));
+        }
+
+        return null;
+    }
+
+    void registerOnItemClickListener(OnItemClickListener listener) {
+        this.itemClickListener = listener;
     }
 
     void swapTrailersCursor(Cursor trailersCursor) {

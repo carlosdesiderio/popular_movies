@@ -14,11 +14,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -87,7 +89,7 @@ public class DetailsActivity extends AppCompatActivity
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
 
         adapter = new DetailsAdapter(this);
-        adapter.registerListener(this);
+        adapter.registerOnItemClickListener(this);
 
         recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setAdapter(adapter);
@@ -111,11 +113,20 @@ public class DetailsActivity extends AppCompatActivity
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_details, menu);
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             // stars return activity animation on the Up/Home button been selected
             case android.R.id.home:
                 supportFinishAfterTransition();
+                return true;
+            case R.id.share_menu_item:
+                sendShareIntent();
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -132,12 +143,39 @@ public class DetailsActivity extends AppCompatActivity
     public void onTrailerSelected(String trailerKey) {
         Intent appIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + trailerKey));
         Intent webIntent = new Intent(Intent.ACTION_VIEW,
-                Uri.parse(getString(R.string.youtube_url_string) + trailerKey));
+                getYouTubeUri(trailerKey));
         try {
             startActivity(appIntent);
         } catch (ActivityNotFoundException ex) {
             startActivity(webIntent);
         }
+    }
+
+    private void sendShareIntent() {
+        String key = adapter.getVideoSharingKey();
+        if(key != null) {
+
+        String title = String.format(getString(R.string.share_title), movie.getTitle());
+        String urlString = getYouTubeUrlString(key);
+
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TEXT, urlString);
+
+        startActivity(Intent.createChooser(intent, title));
+        } else {
+            // TODO change to material
+            Toast.makeText(this, R.string.share_error_message, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private Uri getYouTubeUri(String key) {
+        return Uri.parse(getYouTubeUrlString(key));
+    }
+
+    private String getYouTubeUrlString (String key) {
+        return getString(R.string.youtube_url_string) + key;
     }
 
     private String getVoteAverageString(double vote) {
