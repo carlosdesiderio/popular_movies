@@ -36,11 +36,20 @@ public class MovieDatabaseJSONParserUtils {
     private static final String NODE_NAME_AUTHOR = "author";
     private static final String NODE_NAME_CONTENT = "content";
     private static final String NODE_NAME_URL = "url";
+
+    // error response node names
+    private static final String NODE_NAME_STATUS_MESSAGE = "status_message";
+
     /**
      * Parses Movies DB's JSON request response into a set of {@link Movie} objects
      */
     public static ContentValues[]  parseMovieJsonString(String jsonString) throws JSONException {
         JSONObject moviesJson = new JSONObject(jsonString);
+
+        // returns null if error message is returned
+        if(isJsonResponseError(moviesJson)) {
+            return null;
+        }
 
         JSONArray moviesArray = moviesJson.getJSONArray(NODE_NAME_RESULTS);
 
@@ -75,13 +84,17 @@ public class MovieDatabaseJSONParserUtils {
     public static ContentValues[] parseTrailerJsonString(String jsonString) throws JSONException  {
         JSONObject trailersJson = new JSONObject(jsonString);
 
+        // returns null if error message is returned
+        if(isJsonResponseError(trailersJson)) {
+            return null;
+        }
+
         JSONArray trailersArray = trailersJson.getJSONArray(NODE_NAME_RESULTS);
 
         ContentValues[] valuesList = new ContentValues[trailersArray.length()];
         for (int i = 0; i < trailersArray.length(); i++) {
             JSONObject trailerJSONObject = trailersArray.getJSONObject(i);
             String site = trailerJSONObject.getString(NODE_NAME_SITE);
-            Log.d("PARSER", "trailers >> checking if available at YouTube");
 
             // only stores youtube trailers
             if(site.equals(NODE_SITE_YOUTUBE_FLAG)) {
@@ -105,6 +118,12 @@ public class MovieDatabaseJSONParserUtils {
 
     public static ContentValues[] parseReviewsJsonString(String jsonString) throws JSONException  {
         JSONObject reviewsJson = new JSONObject(jsonString);
+
+        // returns null if error message is returned
+        if(isJsonResponseError(reviewsJson)) {
+            return null;
+        }
+
         JSONArray reviewsArray = reviewsJson.getJSONArray(NODE_NAME_RESULTS);
 
         ContentValues[] valuesList = new ContentValues[reviewsArray.length()];
@@ -127,5 +146,9 @@ public class MovieDatabaseJSONParserUtils {
             Log.d(TAG, "Review parsed: >> " + author);
         }
         return valuesList;
+    }
+
+    private static boolean isJsonResponseError(JSONObject moviesJson) throws JSONException {
+        return moviesJson.has(NODE_NAME_STATUS_MESSAGE);
     }
 }
