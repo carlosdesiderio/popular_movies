@@ -11,8 +11,6 @@ import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
 
-import java.util.List;
-
 import uk.me.desiderio.popularmovies.data.Movie;
 import uk.me.desiderio.popularmovies.data.MoviesContract.MoviesEntry;
 import uk.me.desiderio.popularmovies.network.MovieDatabaseRequestUtils;
@@ -43,14 +41,9 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
         if(!moviesCursor.moveToPosition(position)) {
             return;
         }
-
-        int id = moviesCursor.getInt(moviesCursor.getColumnIndex(MoviesEntry.COLUMN_MOVIE_ID));
-        String moviePosterUri = moviesCursor.getString(moviesCursor.getColumnIndex(MoviesEntry.COLUMN_POSTER_URL));
-
-        // todo remove this line when only the id is passed
         final Movie movie = getMovieObjectFromCursor();
 
-        final Uri imageUri = MovieDatabaseRequestUtils.getMoviePosterUri(moviePosterUri);
+        final Uri imageUri = MovieDatabaseRequestUtils.getMoviePosterUri(movie.getPosterURLPathString());
 
         Log.d(TAG, "onBindViewHolder :: image uri: " + imageUri.toString());
         Picasso.with(holder.itemView.getContext()).load(imageUri).into(holder.posterImageView);
@@ -64,7 +57,6 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
         });
     }
 
-    // TODO revise this after adding the provider
     private Movie getMovieObjectFromCursor() {
         int id = moviesCursor.getInt(moviesCursor.getColumnIndex(MoviesEntry.COLUMN_MOVIE_ID));
         String title = moviesCursor.getString(moviesCursor.getColumnIndex(MoviesEntry.COLUMN_TITLE));

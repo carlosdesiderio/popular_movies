@@ -2,7 +2,6 @@ package uk.me.desiderio.popularmovies;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -11,13 +10,19 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import uk.me.desiderio.popularmovies.data.MoviesContract.ReviewEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.TrailerEntry;
+import uk.me.desiderio.popularmovies.view.DetailListViewItem;
+import uk.me.desiderio.popularmovies.view.DetailListViewItem.ViewType;
+
+import static uk.me.desiderio.popularmovies.view.DetailListViewItem.REVIEW_HEADING_ITEM_TYPE;
+import static uk.me.desiderio.popularmovies.view.DetailListViewItem.REVIEW_ITEM_TYPE;
+import static uk.me.desiderio.popularmovies.view.DetailListViewItem.TRAILER_HEADING_ITEM_TYPE;
+import static uk.me.desiderio.popularmovies.view.DetailListViewItem.TRAILER_ITEM_TYPE;
 
 /**
  * Adapter for the {@link DetailsActivity}
@@ -32,40 +37,13 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         void onTrailerSelected(String trailerKey);
     }
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({HEADING_ITEM_TYPE, TRAILER_ITEM_TYPE, REVIEW_ITEM_TYPE})
-    @interface ViewType { }
-    private static final int HEADING_ITEM_TYPE = 1;
-    private static final int TRAILER_ITEM_TYPE = 2;
-    private static final int REVIEW_ITEM_TYPE = 3;
-
-    // TODO revise this so to move it out as a independent class
-    public class ViewItem {
-        private int originalIndex;
-        private int type;
-
-
-        private ViewItem(@ViewType int type, int originalIndex) {
-            this.type = type;
-            this.originalIndex = originalIndex;
-        }
-
-        public int getOriginalIndex() {
-            return originalIndex;
-        }
-
-        public int getType() {
-            return type;
-        }
-    }
-
     private OnItemClickListener itemClickListener;
     private Context context;
 
     private Cursor trailersCursor;
     private Cursor reviewsCursor;
     private List<String> labels;
-    private List<ViewItem> viewItemList;
+    private List<DetailListViewItem> viewItemList;
 
     DetailsAdapter(Context context) {
         this.context = context;
@@ -83,7 +61,8 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             case REVIEW_ITEM_TYPE:
                 listItemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.detail_list_review_item_layout, parent, false);
                 return new DetailsAdapter.ReviewViewHolder(listItemView);
-            case HEADING_ITEM_TYPE:
+            case TRAILER_HEADING_ITEM_TYPE:
+            case REVIEW_HEADING_ITEM_TYPE:
                 listItemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.detail_list_heading_item_layout, parent, false);
                 return new DetailsAdapter.HeadingViewHolder(listItemView);
             default:
@@ -97,7 +76,8 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         int viewType = getItemViewType(position);
 
         switch (viewType) {
-            case HEADING_ITEM_TYPE:
+            case TRAILER_HEADING_ITEM_TYPE:
+            case REVIEW_HEADING_ITEM_TYPE:
                 String headingLabel = labels.get(getItemDataOriginalPosition(position));
                 HeadingViewHolder stringViewHolder = (HeadingViewHolder) holder;
                 stringViewHolder.headingTextView.setText(headingLabel);
@@ -147,7 +127,7 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     @Override
     @ViewType
     public int getItemViewType(int position) {
-        ViewItem item = viewItemList.get(position);
+        DetailListViewItem item = viewItemList.get(position);
         return item.getType();
     }
 
@@ -160,14 +140,13 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     /**
-     * It returns the first trailer YouTube key
+     * It returns the first YouTube trailer key
      */
     @Nullable
     public String getVideoSharingKey() {
         if(trailersCursor != null && trailersCursor.moveToPosition(0)) {
             return trailersCursor.getString(trailersCursor.getColumnIndex(TrailerEntry.COLUMN_KEY));
         }
-
         return null;
     }
 
@@ -179,10 +158,12 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (trailersCursor != null && trailersCursor.getCount() > 0) {
             labels.add(context.getString(R.string.details_list_heading_trailers));
             Log.d(TAG, "Swap Trailer Cursor :: Register Header View");
-            registerDataTypeItem(HEADING_ITEM_TYPE, labels.size() - 1);
+            registerDataTypeItem(TRAILER_HEADING_ITEM_TYPE, labels.size() - 1);
             this.trailersCursor = trailersCursor;
             Log.d(TAG, "Swap Trailer Cursor :: Register " + trailersCursor.getCount() + " Trailer View Items");
             registerAllCursorDataItems(TRAILER_ITEM_TYPE, trailersCursor);
+            // sort list items so that the trailers are shown before the reviews
+            Collections.sort(viewItemList, new DetailListViewItem.ViewItemComparator());
         }
         notifyDataSetChanged();
     }
@@ -191,15 +172,15 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (reviewsCursor != null && reviewsCursor.getCount() > 0) {
             this.labels.add(context.getString(R.string.details_list_heading_reviews));
             Log.d(TAG, "Swap Trailer Cursor :: Register Header View");
-            registerDataTypeItem(HEADING_ITEM_TYPE, labels.size() - 1);
+            registerDataTypeItem(REVIEW_HEADING_ITEM_TYPE, labels.size() - 1);
             this.reviewsCursor = reviewsCursor;
             Log.d(TAG, "Swap Trailer Cursor :: Register " + reviewsCursor.getCount() + " Review View Items");
+            // sort list items so that the reviews are shown after the trailers
             registerAllCursorDataItems(REVIEW_ITEM_TYPE, reviewsCursor);
         }
         notifyDataSetChanged();
     }
 
-    // TODO revise creational strategy: when to reset
     void resetData() {
         this.trailersCursor = null;
         this.reviewsCursor = null;
@@ -208,7 +189,7 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     private void registerDataTypeItem(@ViewType int type, int dataOriginalIndex) {
-        ViewItem dataItemType = new ViewItem(type, dataOriginalIndex);
+        DetailListViewItem dataItemType = new DetailListViewItem(type, dataOriginalIndex);
         viewItemList.add(dataItemType);
     }
 

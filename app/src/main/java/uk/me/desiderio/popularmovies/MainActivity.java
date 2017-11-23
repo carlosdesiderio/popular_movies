@@ -3,7 +3,6 @@ package uk.me.desiderio.popularmovies;
 import android.content.Intent;
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -30,6 +29,7 @@ import static uk.me.desiderio.popularmovies.network.MovieFeedType.POPULAR_MOVIES
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
         MovieAdapter.OnItemClickListener {
+     // TODO add json for error response
 
     private static final int MOVIE_LOADER_ID = 300;
 
@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_movie_order, menu);
+        getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 

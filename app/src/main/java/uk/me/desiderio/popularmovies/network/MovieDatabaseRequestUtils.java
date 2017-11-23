@@ -59,6 +59,7 @@ public class MovieDatabaseRequestUtils {
                 .appendQueryParameter(API_KEY_QUERY_NAME, API_KEY)
                 .build();
 
+        Log.d(TAG, "Reviews URI: " + uri.toString());
         return getUrlFromURI(uri);
     }
 
@@ -84,6 +85,7 @@ public class MovieDatabaseRequestUtils {
                 .appendQueryParameter(API_KEY_QUERY_NAME, API_KEY)
                 .build();
 
+        Log.d(TAG, "Popular movies URI: " + uri.toString());
         return getUrlFromURI(uri);
     }
 

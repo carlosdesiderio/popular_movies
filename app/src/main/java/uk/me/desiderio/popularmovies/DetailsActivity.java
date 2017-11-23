@@ -17,8 +17,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,6 +49,7 @@ public class DetailsActivity extends AppCompatActivity
     private Movie movie;
     private String movieId;
     private Button favoriteButton;
+    private ScrollView scrollView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +68,15 @@ public class DetailsActivity extends AppCompatActivity
         TextView voteTextView = findViewById(R.id.voteTextView);
         TextView synopsisTextView = findViewById(R.id.synopsisTextView);
         ImageView posterImageView = findViewById(R.id.detailsPosterImageView);
+
+        scrollView = findViewById(R.id.details_scroll_view);
+        // Wait until my scrollView is ready to reset it to the top of the view
+        scrollView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                scrollView.fullScroll(View.FOCUS_UP);
+            }
+        });
 
         favoriteButton = findViewById(R.id.detail_favorite_button);
 
@@ -106,7 +118,6 @@ public class DetailsActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
-        recyclerView.scrollToPosition(0);
 
         boolean isFavorite= isMovieFavorite(movieId);
         setButtonLabel(isFavorite);
