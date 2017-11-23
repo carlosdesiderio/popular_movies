@@ -12,6 +12,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import uk.me.desiderio.popularmovies.data.MoviesContract.FavoritessEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.MoviesEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.ReviewEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.TrailerEntry;
@@ -30,6 +31,7 @@ public class MovieContentProvider extends ContentProvider {
     public static final int TRAILERS_WITH_ID = 201;
     public static final int REVIEWS = 300;
     public static final int REVIEWS_WITH_ID = 301;
+    public static final int FAVORITES = 400;
 
     public static final UriMatcher uriMatcher = buildUriMatcher();
 
@@ -46,6 +48,10 @@ public class MovieContentProvider extends ContentProvider {
         uriMatcher.addURI(MoviesContract.CONTENT_AUTHORITY, MoviesContract.PATH_TRAILERS, TRAILERS);
         // single trailer
         uriMatcher.addURI(MoviesContract.CONTENT_AUTHORITY, MoviesContract.PATH_TRAILERS + "/#", TRAILERS_WITH_ID);
+        // favorites directory
+        uriMatcher.addURI(MoviesContract.CONTENT_AUTHORITY, MoviesContract.PATH_FAVORITES, FAVORITES);
+        // single directory
+        uriMatcher.addURI(MoviesContract.CONTENT_AUTHORITY, MoviesContract.PATH_FAVORITES + "/#", FAVORITES);
         // review directory
         uriMatcher.addURI(MoviesContract.CONTENT_AUTHORITY, MoviesContract.PATH_REVIEWS, REVIEWS);
         // single review
@@ -81,6 +87,9 @@ public class MovieContentProvider extends ContentProvider {
             case REVIEWS:
                 tableName = ReviewEntry.TABLE_NAME;
                 break;
+            case FAVORITES:
+                tableName = FavoritessEntry.TABLE_NAME;
+                break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
@@ -111,23 +120,26 @@ public class MovieContentProvider extends ContentProvider {
 
         switch (match) {
             case MOVIES:
-                returnUri = doInsert(MoviesEntry.TABLE_NAME, MoviesEntry.CONTENT_URI, uri, contentValues);
+                returnUri = doInsert(MoviesEntry.TABLE_NAME, MoviesEntry.CONTENT_URI, contentValues);
             break;
            case MOVIES_WITH_ID:
                returnUri = null;
             break;
            case TRAILERS:
-               returnUri = doInsert(TrailerEntry.TABLE_NAME, TrailerEntry.CONTENT_URI, uri, contentValues);
+               returnUri = doInsert(TrailerEntry.TABLE_NAME, TrailerEntry.CONTENT_URI, contentValues);
             break;
            case TRAILERS_WITH_ID:
                returnUri = null;
             break;
            case REVIEWS:
-               returnUri = doInsert(ReviewEntry.TABLE_NAME, ReviewEntry.CONTENT_URI, uri, contentValues);
+               returnUri = doInsert(ReviewEntry.TABLE_NAME, ReviewEntry.CONTENT_URI, contentValues);
             break;
            case REVIEWS_WITH_ID:
                returnUri = null;
             break;
+            case FAVORITES:
+                returnUri = doInsert(FavoritessEntry.TABLE_NAME, FavoritessEntry.CONTENT_URI, contentValues);
+                break;
            default:
                throw new UnsupportedOperationException("Unknown Uri: " + uri);
         }
@@ -180,16 +192,16 @@ public class MovieContentProvider extends ContentProvider {
         }
     }
 
-    private Uri doInsert(String tableName, Uri contentUri, Uri requestUri, ContentValues contentValues) {
+    private Uri doInsert(String tableName, Uri contentUri, ContentValues contentValues) {
         final SQLiteDatabase database = dbHelper.getWritableDatabase();
-        Uri returnUri= null ;
+        Uri returnUri;
 
         long id = database.insert(tableName, null, contentValues);
         Log.d(TAG, "Data item inserted with id: " + id);
         if(id != -1) {
             returnUri = ContentUris.withAppendedId(contentUri, id);
         } else {
-            throw new SQLException("Failed to insert raw in uri : " + requestUri);
+            throw new SQLException("Failed to insert raw in uri : " + contentUri);
         }
         return returnUri;
     }
@@ -224,8 +236,28 @@ public class MovieContentProvider extends ContentProvider {
     // unsupported actions
 
     @Override
-    public int delete(@NonNull Uri uri, @Nullable String s, @Nullable String[] strings) {
-        throw new UnsupportedOperationException("Delete is not a supported action from this provider");
+    public int delete(@NonNull Uri uri, @Nullable String whereClause, @Nullable String[] whereArgs) {
+        SQLiteDatabase database = dbHelper.getWritableDatabase();
+        int match = uriMatcher.match(uri);
+
+        int deletedRows;
+
+        switch (match) {
+            case FAVORITES:
+                deletedRows = database.delete(FavoritessEntry.TABLE_NAME,
+                        whereClause,
+                        whereArgs);
+                break;
+            default:
+                throw new UnsupportedOperationException("Delete is not a supported action from this provider. Unknown uri: " + uri);
+        }
+
+        if (deletedRows > 0) {
+            Log.d(TAG, "Delition completed  : " + deletedRows + " rows deleted");
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
+        return deletedRows;
     }
 
     @Override

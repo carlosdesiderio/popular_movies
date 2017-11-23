@@ -150,5 +150,18 @@
             android:nestedScrollingEnabled="false"
             app:layout_constraintStart_toEndOf="@+id/left_margin_guideline"
             app:layout_constraintTop_toBottomOf="@+id/detail_first_divider_view" />
+
+        <Button
+            android:id="@+id/detail_favorite_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:padding="4dp"
+            android:minHeight="0dp"
+            android:text="@string/favorites_button_add_string"
+            android:background="@color/md_teal_100"
+            android:textAppearance="@style/TextAppearance.AppCompat.Button.Small"
+            app:layout_constraintStart_toStartOf="@+id/verticalHalfGuideline"
+            app:layout_constraintTop_toBottomOf="@+id/voteTextView" />
     </android.support.constraint.ConstraintLayout>
 </ScrollView>

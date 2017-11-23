@@ -5,9 +5,14 @@
     <string name="title_activity_details">Movie Details</string>
     <string name="menu_item_popular_movies">Popular Movies</string>
     <string name="menu_item_top_rated_movies">Top Rated Movies</string>
+    <string name="menu_item_favorites_movies">Favorites Movies</string>
     <string name="movies_poster_image_content_desc">Movie\'s Poster Image</string>
     <string name="vote_average_denominator_suffix">/10</string>
     <string name="details_list_heading_trailers">Trailers</string>
     <string name="details_list_heading_reviews">Reviews</string>
     <string name="youtube_url_string">http://www.youtube.com/watch?v=</string>
+    <string name="favorites_button_add_string">Mark as \nfavorite</string>
+    <string name="favorites_button_remove_string">Remove from \nfavorites</string>
+
+
 </resources>

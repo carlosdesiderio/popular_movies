@@ -24,4 +24,8 @@
         <item name="android:textAllCaps">true</item>
     </style>
 
+    <style name="TextAppearance.AppCompat.Button.Small" parent="TextAppearance.AppCompat.Button">
+        <item name="android:textSize">10sp</item>
+    </style>
+
 </resources>

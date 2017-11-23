@@ -11,8 +11,9 @@ import java.lang.annotation.RetentionPolicy;
 
 public class MovieFeedType {
     @Retention(RetentionPolicy.SOURCE)
-    @StringDef({POPULAR_MOVIES_FEED, TOP_RATED_MOVIES_FEED})
+    @StringDef({POPULAR_MOVIES_FEED, TOP_RATED_MOVIES_FEED, FAVORITES_MOVIES_FEED})
     public @interface FeedType {}
     public static final String  POPULAR_MOVIES_FEED = "popular";
     public static final String  TOP_RATED_MOVIES_FEED = "top_rated";
+    public static final String  FAVORITES_MOVIES_FEED = "favorites";
 }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import uk.me.desiderio.popularmovies.data.MoviesContract.FavoritessEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.MoviesEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.ReviewEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.TrailerEntry;
@@ -15,7 +16,7 @@ import uk.me.desiderio.popularmovies.data.MoviesContract.TrailerEntry;
 public class MovieDBHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "movies.db";
-    private static final int DATABASE_VERSION = 10;
+    private static final int DATABASE_VERSION = 11;
 
     public MovieDBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -56,10 +57,21 @@ public class MovieDBHelper extends SQLiteOpenHelper {
                 "ON UPDATE CASCADE ON DELETE CASCADE" +
                 " UNIQUE (" + ReviewEntry.COLUMN_REVIEW_ID + ") ON CONFLICT REPLACE);";
 
+        final String SQL_CREATE_FAVORITES_TABLE = "CREATE TABLE " + FavoritessEntry.TABLE_NAME + " (" +
+                FavoritessEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                FavoritessEntry.COLUMN_MOVIE_ID + " INTEGER NOT NULl, " +
+                FavoritessEntry.COLUMN_TITLE + " TEXT NOT NULL, " +
+                FavoritessEntry.COLUMN_DATE + " TEXT NOT NULL, " +
+                FavoritessEntry.COLUMN_SYNOPSIS + " TEXT NOT NULL, " +
+                FavoritessEntry.COLUMN_VOTE_AVERAGE + " REAL NOT NULL, " +
+                FavoritessEntry.COLUMN_POSTER_URL + " TEXT NOT NULL, " +
+                " UNIQUE (" + MoviesEntry.COLUMN_MOVIE_ID + ") ON CONFLICT REPLACE);";
+
 
         sqLiteDatabase.execSQL(SQL_CREATE_MOVIES_TABLE);
         sqLiteDatabase.execSQL(SQL_CREATE_TRAILER_TABLE);
         sqLiteDatabase.execSQL(SQL_CREATE_REVIEW_TABLE);
+        sqLiteDatabase.execSQL(SQL_CREATE_FAVORITES_TABLE);
     }
 
     @Override
@@ -67,6 +79,7 @@ public class MovieDBHelper extends SQLiteOpenHelper {
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + ReviewEntry.TABLE_NAME);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TrailerEntry.TABLE_NAME);
         sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MoviesEntry.TABLE_NAME);
+        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + FavoritessEntry.TABLE_NAME);
         onCreate(sqLiteDatabase);
     }
 

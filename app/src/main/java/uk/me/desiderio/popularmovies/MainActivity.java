@@ -3,6 +3,7 @@ package uk.me.desiderio.popularmovies;
 import android.content.Intent;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -17,12 +18,14 @@ import android.view.MenuItem;
 import android.view.View;
 
 import uk.me.desiderio.popularmovies.data.Movie;
+import uk.me.desiderio.popularmovies.data.MoviesContract.FavoritessEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.MoviesEntry;
 import uk.me.desiderio.popularmovies.data.MoviesCursorWrapper;
 import uk.me.desiderio.popularmovies.network.MovieFeedType;
 import uk.me.desiderio.popularmovies.task.MoviesIntentService;
 import uk.me.desiderio.popularmovies.task.MoviesRequestTasks;
 
+import static uk.me.desiderio.popularmovies.network.MovieFeedType.*;
 import static uk.me.desiderio.popularmovies.network.MovieFeedType.POPULAR_MOVIES_FEED;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
@@ -68,20 +71,23 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 resetLoaderWithFeedType(POPULAR_MOVIES_FEED);
                 return true;
             case R.id.top_rated_movies_menu_item:
-                resetLoaderWithFeedType(uk.me.desiderio.popularmovies.network.MovieFeedType.TOP_RATED_MOVIES_FEED);
+                resetLoaderWithFeedType(TOP_RATED_MOVIES_FEED);
+                return true;
+            case R.id.favorites_movies_menu_item:
+                resetLoaderWithFeedType(FAVORITES_MOVIES_FEED);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    private void resetLoaderWithFeedType(@MovieFeedType.FeedType String feedType) {
+    private void resetLoaderWithFeedType(@FeedType String feedType) {
         getSupportLoaderManager().restartLoader(MOVIE_LOADER_ID,
                 getMovieLoaderBundle(feedType),
                 this);
     }
 
-    private Bundle getMovieLoaderBundle(@MovieFeedType.FeedType String feedType) {
+    private Bundle getMovieLoaderBundle(@FeedType String feedType) {
         Bundle bundle = new Bundle();
         bundle.putString(MoviesIntentService.EXTRA_FEED_TYPE, feedType);
         return bundle;
@@ -107,6 +113,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         startActivity(intent, options.toBundle());
     }
 
+
     @Override
     public Loader<Cursor> onCreateLoader(int loaderId, final Bundle args) {
         // TODO revise which fields are used then create Projection + cursor fields numbers consttant
@@ -128,27 +135,38 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
             @Override
             protected void onStartLoading() {
-                if (cursor != null) {
-                    deliverResult(cursor);
-                } else {
+                // makes sure that the favorite view updates after removing movie from the favorite list
+                boolean hasChanged = takeContentChanged();
+                if (cursor == null || hasChanged) {
                     showEmptyStateView(true);
                     forceLoad();
+                } else {
+                    deliverResult(cursor);
                 }
             }
 
             @Override
             public Cursor loadInBackground() {
-                String feedType = args.getString(MoviesIntentService.EXTRA_FEED_TYPE);
-                String selection = MoviesEntry.COLUMN_FEED_TYPE + " = ?";
-                ;
-                String[] selectinArgs = {feedType};
-                Cursor cursor = getContentResolver().query(MoviesEntry.CONTENT_URI,
-                        null,
-                        selection,
-                        selectinArgs,
-                        null);
-                Cursor cursorWrapper = new MoviesCursorWrapper(cursor, feedType);
-                cursorWrapper.registerContentObserver(obs);
+                @FeedType String feedType = args.getString(MoviesIntentService.EXTRA_FEED_TYPE);
+
+                Cursor cursor = null;
+                Cursor cursorWrapper = null;
+
+
+                switch (feedType) {
+                    case MovieFeedType.FAVORITES_MOVIES_FEED:
+                        cursor = getFavoritesCursor();
+                        break;
+
+                    case MovieFeedType.POPULAR_MOVIES_FEED:
+                    case MovieFeedType.TOP_RATED_MOVIES_FEED:
+                        cursor = getMoviesCursor(feedType);
+                        break;
+                }
+                if(cursor != null) {
+                    cursorWrapper = new MoviesCursorWrapper(cursor, feedType);
+                    cursorWrapper.registerContentObserver(obs);
+                }
                 return cursorWrapper;
             }
 
@@ -156,6 +174,27 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             public void deliverResult(Cursor cursor) {
                 this.cursor = cursor;
                 super.deliverResult(cursor);
+            }
+
+            private Cursor getMoviesCursor(String feedType) {
+                String selection = MoviesEntry.COLUMN_FEED_TYPE + " = ?";
+                String[] selectinArgs = {feedType};
+
+                Cursor cursor = getContentResolver().query(MoviesEntry.CONTENT_URI,
+                        null,
+                        selection,
+                        selectinArgs,
+                        null);
+                return cursor;
+            }
+
+            private Cursor getFavoritesCursor() {
+                Cursor cursor = getContentResolver().query(FavoritessEntry.CONTENT_URI,
+                        null,
+                        null,
+                        null,
+                        null);
+                return cursor;
             }
         };
     }
@@ -168,13 +207,17 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             showEmptyStateView(false);
         } else {
             MoviesCursorWrapper cursorWrapper = (MoviesCursorWrapper) data;
-            cursorWrapper.getFeedType();
-            Intent intent = new Intent(this, MoviesIntentService.class);
-            intent.setAction(MoviesRequestTasks.ACTION_REQUEST_MOVIE_DATA);
-            intent.putExtra(MoviesIntentService.EXTRA_FEED_TYPE, cursorWrapper.getFeedType().toString());
-            startService(intent);
-        }
+            String feedType = cursorWrapper.getFeedType();
 
+            // only request data for popular and top rate movies
+            if(feedType.equals(MovieFeedType.POPULAR_MOVIES_FEED) ||
+                    feedType.equals(MovieFeedType.TOP_RATED_MOVIES_FEED)) {
+                Intent intent = new Intent(this, MoviesIntentService.class);
+                intent.setAction(MoviesRequestTasks.ACTION_REQUEST_MOVIE_DATA);
+                intent.putExtra(MoviesIntentService.EXTRA_FEED_TYPE, feedType);
+                startService(intent);
+            }
+        }
     }
 
     @Override

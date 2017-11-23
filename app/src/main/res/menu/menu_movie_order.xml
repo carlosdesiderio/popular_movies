@@ -7,5 +7,8 @@
     <item android:id="@+id/top_rated_movies_menu_item"
         android:title="@string/menu_item_top_rated_movies"
         app:showAsAction="never"/>
+    <item android:id="@+id/favorites_movies_menu_item"
+        android:title="@string/menu_item_favorites_movies"
+        app:showAsAction="never"/>
 
 </menu>
