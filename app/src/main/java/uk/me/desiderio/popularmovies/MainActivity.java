@@ -1,10 +1,14 @@
 package uk.me.desiderio.popularmovies;
 
+import android.content.Context;
 import android.content.Intent;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.IntDef;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -12,29 +16,53 @@ import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 import uk.me.desiderio.popularmovies.data.Movie;
 import uk.me.desiderio.popularmovies.data.MoviesContract.FavoritessEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.MoviesEntry;
 import uk.me.desiderio.popularmovies.data.MoviesCursorWrapper;
+import uk.me.desiderio.popularmovies.network.ConnectivityUtils;
+import uk.me.desiderio.popularmovies.network.ConnectivityUtils.ConnectivityState;
 import uk.me.desiderio.popularmovies.network.MovieFeedType;
 import uk.me.desiderio.popularmovies.task.MoviesIntentService;
 import uk.me.desiderio.popularmovies.task.MoviesRequestTasks;
+import uk.me.desiderio.popularmovies.view.ViewFactory;
 
-import static uk.me.desiderio.popularmovies.network.MovieFeedType.*;
+import static uk.me.desiderio.popularmovies.network.ConnectivityUtils.CONNECTED;
+import static uk.me.desiderio.popularmovies.network.ConnectivityUtils.DISCONNECTED;
+import static uk.me.desiderio.popularmovies.network.MovieFeedType.FAVORITES_MOVIES_FEED;
+import static uk.me.desiderio.popularmovies.network.MovieFeedType.FeedType;
 import static uk.me.desiderio.popularmovies.network.MovieFeedType.POPULAR_MOVIES_FEED;
+import static uk.me.desiderio.popularmovies.network.MovieFeedType.TOP_RATED_MOVIES_FEED;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
-        MovieAdapter.OnItemClickListener {
-     // TODO add json for error response
+        MovieAdapter.OnItemClickListener,
+ConnectivityManager.OnNetworkActiveListener{
+
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     private static final int MOVIE_LOADER_ID = 300;
 
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({VISIBLE, INVISIBLE})
+    @interface EmptyStateViewVisibility {}
+    private static final int VISIBLE = 1;
+    private static final int INVISIBLE = 0;
+
     private MovieAdapter adapter;
     private View emptyStateView;
+
+    @FeedType
+    private String currentFeedType;
+
+    private ConnectivityManager connectivityManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,8 +82,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         recyclerView.setAdapter(adapter);
         recyclerView.setHasFixedSize(true);
 
+        // TODO refractor so that it can be included in the changedFeedtyp
+        currentFeedType = POPULAR_MOVIES_FEED;
         Bundle initialLoaderBundle = getMovieLoaderBundle(POPULAR_MOVIES_FEED);
         getSupportLoaderManager().initLoader(MOVIE_LOADER_ID, initialLoaderBundle, this);
+
+        connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        connectivityManager.addDefaultNetworkActiveListener(this);
     }
 
     @Override
@@ -68,22 +101,23 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.popular_movies_menu_item:
-                resetLoaderWithFeedType(POPULAR_MOVIES_FEED);
+                changeFeedType(POPULAR_MOVIES_FEED);
                 return true;
             case R.id.top_rated_movies_menu_item:
-                resetLoaderWithFeedType(TOP_RATED_MOVIES_FEED);
+                changeFeedType(TOP_RATED_MOVIES_FEED);
                 return true;
             case R.id.favorites_movies_menu_item:
-                resetLoaderWithFeedType(FAVORITES_MOVIES_FEED);
+                changeFeedType(FAVORITES_MOVIES_FEED);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    private void resetLoaderWithFeedType(@FeedType String feedType) {
+    private void resetLoaderWithFeedType() {
+        adapter.swapCursor(null);
         getSupportLoaderManager().restartLoader(MOVIE_LOADER_ID,
-                getMovieLoaderBundle(feedType),
+                getMovieLoaderBundle(currentFeedType),
                 this);
     }
 
@@ -93,14 +127,46 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         return bundle;
     }
 
-    private void showEmptyStateView(boolean isVisible) {
-        if (isVisible) {
-            emptyStateView.setVisibility(View.VISIBLE);
-        } else {
-            emptyStateView.setVisibility(View.GONE);
+
+    private void setEmptyStateViewVisibility(@EmptyStateViewVisibility int visibility) {
+        switch ((visibility)) {
+            case VISIBLE:
+                emptyStateView.setVisibility(View.VISIBLE);
+                break;
+            case INVISIBLE:
+                emptyStateView.setVisibility(View.GONE);
+                break;
         }
     }
 
+    @FeedType
+    private void changeFeedType(String feedType) {
+        currentFeedType = feedType;
+        resetLoaderWithFeedType();
+    }
+
+    private void showSnack(@ConnectivityState int connectivityState) {
+        View anchorView = findViewById(R.id.movie_list_recycler_view);
+        final Snackbar bar = ViewFactory.getSnackbar(connectivityState, anchorView, new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                resetLoaderWithFeedType();
+            }
+        });
+        bar.show();
+    }
+
+    @ConnectivityState
+    private int getConnectivityState() {
+        return ConnectivityUtils.checkConnectivity(this);
+    }
+
+    @Override
+    public void onNetworkActive() {
+        if(!adapter.hasData()) {
+            showSnack(CONNECTED);
+        }
+    }
 
     @Override
     public void onItemClick(Movie movie, View sharedView) {
@@ -138,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 // makes sure that the favorite view updates after removing movie from the favorite list
                 boolean hasChanged = takeContentChanged();
                 if (cursor == null || hasChanged) {
-                    showEmptyStateView(true);
+                    setEmptyStateViewVisibility(VISIBLE);
                     forceLoad();
                 } else {
                     deliverResult(cursor);
@@ -151,7 +217,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
                 Cursor cursor = null;
                 Cursor cursorWrapper = null;
-
 
                 switch (feedType) {
                     case MovieFeedType.FAVORITES_MOVIES_FEED:
@@ -204,7 +269,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         // data.getCount > 0
         if (data != null && data.getCount() > 0) {
             adapter.swapCursor(data);
-            showEmptyStateView(false);
+            setEmptyStateViewVisibility(INVISIBLE);
+
         } else {
             MoviesCursorWrapper cursorWrapper = (MoviesCursorWrapper) data;
             String feedType = cursorWrapper.getFeedType();
@@ -212,17 +278,30 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             // only request data for popular and top rate movies
             if(feedType.equals(MovieFeedType.POPULAR_MOVIES_FEED) ||
                     feedType.equals(MovieFeedType.TOP_RATED_MOVIES_FEED)) {
+                requestServerData(feedType);
+            }
+        }
+    }
+
+    public void requestServerData(@FeedType String feedType) {
+        int connectivityState = getConnectivityState();
+
+        switch (connectivityState) {
+            case CONNECTED:
                 Intent intent = new Intent(this, MoviesIntentService.class);
                 intent.setAction(MoviesRequestTasks.ACTION_REQUEST_MOVIE_DATA);
                 intent.putExtra(MoviesIntentService.EXTRA_FEED_TYPE, feedType);
                 startService(intent);
-            }
+                break;
+            case DISCONNECTED:
+                showSnack(DISCONNECTED);
+                break;
         }
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         adapter.swapCursor(null);
-        showEmptyStateView(true);
+        setEmptyStateViewVisibility(VISIBLE);
     }
 }

@@ -3,10 +3,13 @@ package uk.me.desiderio.popularmovies;
 
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -30,12 +33,17 @@ import uk.me.desiderio.popularmovies.data.Movie;
 import uk.me.desiderio.popularmovies.data.MoviesContract.FavoritessEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.ReviewEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.TrailerEntry;
+import uk.me.desiderio.popularmovies.network.ConnectivityUtils;
 import uk.me.desiderio.popularmovies.network.MovieDatabaseRequestUtils;
 import uk.me.desiderio.popularmovies.task.MoviesIntentService;
 import uk.me.desiderio.popularmovies.task.MoviesRequestTasks;
+import uk.me.desiderio.popularmovies.view.ViewFactory;
+
+import static uk.me.desiderio.popularmovies.network.ConnectivityUtils.CONNECTED;
+import static uk.me.desiderio.popularmovies.network.ConnectivityUtils.DISCONNECTED;
 
 public class DetailsActivity extends AppCompatActivity
-        implements DetailsAdapter.OnItemClickListener {
+        implements DetailsAdapter.OnItemClickListener, ConnectivityManager.OnNetworkActiveListener {
 
     public static final String TAG = DetailsActivity.class.getSimpleName();
 
@@ -46,10 +54,17 @@ public class DetailsActivity extends AppCompatActivity
 
     private RecyclerView recyclerView;
     private DetailsAdapter adapter;
-    private Movie movie;
-    private String movieId;
     private Button favoriteButton;
     private ScrollView scrollView;
+
+    private TrailerLoaderCallbacks trailerLoaderCallbacks;
+    private ReviewLoaderCallbacks reviewLoaderCallbacks;
+
+    private Bundle movieBundle;
+   /* private Movie movie;
+    private String movieId;*/
+
+    private ConnectivityManager connectivityManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,9 +72,9 @@ public class DetailsActivity extends AppCompatActivity
         setContentView(R.layout.activity_details);
 
         Intent intent = getIntent();
-        final Bundle movieBundle = intent.getExtras();
-        movie = movieBundle.getParcelable(EXTRA_MOVIE);
-        movieId = getMovieIdString(movieBundle);
+        movieBundle = intent.getExtras();
+        Movie movie = movieBundle.getParcelable(EXTRA_MOVIE);
+
         Uri uri = MovieDatabaseRequestUtils.getMoviePosterUri(movie.getPosterURLPathString());
         String releaseYear = movie.getDate().substring(0, movie.getDate().indexOf("-"));
 
@@ -108,16 +123,26 @@ public class DetailsActivity extends AppCompatActivity
 
         adapter.resetData();
 
-        TrailerLoaderCallbacks trailerLoaderCallbacks = new TrailerLoaderCallbacks();
-        ReviewLoaderCallbacks reviewLoaderCallbacks = new ReviewLoaderCallbacks();
+        connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        connectivityManager.addDefaultNetworkActiveListener(this);
+
+        trailerLoaderCallbacks = new TrailerLoaderCallbacks();
+        reviewLoaderCallbacks = new ReviewLoaderCallbacks();
 
         getSupportLoaderManager().initLoader(TRAILERS_LOADER_ID, movieBundle, trailerLoaderCallbacks);
         getSupportLoaderManager().initLoader(REVIEWS_LOADER_ID, movieBundle, reviewLoaderCallbacks);
     }
 
+    private void restartLoader() {
+        getSupportLoaderManager().restartLoader(TRAILERS_LOADER_ID, movieBundle, trailerLoaderCallbacks);
+        getSupportLoaderManager().restartLoader(TRAILERS_LOADER_ID, movieBundle, trailerLoaderCallbacks);
+
+    }
     @Override
     protected void onResume() {
         super.onResume();
+
+        String movieId = getMovieIdString(movieBundle);
 
         boolean isFavorite= isMovieFavorite(movieId);
         setButtonLabel(isFavorite);
@@ -166,7 +191,7 @@ public class DetailsActivity extends AppCompatActivity
         String key = adapter.getVideoSharingKey();
         if(key != null) {
 
-        String title = String.format(getString(R.string.share_title), movie.getTitle());
+        String title = String.format(getString(R.string.share_title), getMovie().getTitle());
         String urlString = getYouTubeUrlString(key);
 
         Intent intent = new Intent();
@@ -191,6 +216,10 @@ public class DetailsActivity extends AppCompatActivity
 
     private String getVoteAverageString(double vote) {
         return String.valueOf(vote) + getString(R.string.vote_average_denominator_suffix);
+    }
+
+    private Movie getMovie() {
+        return movieBundle.getParcelable(EXTRA_MOVIE);
     }
 
     private String getMovieIdString(Bundle bundle) {
@@ -221,7 +250,6 @@ public class DetailsActivity extends AppCompatActivity
 
         if(cursor != null) {
             boolean isMovieInFavorites = cursor.getCount() != 0;
-            Log.d(TAG, "Is movie "+ movie.getId() + " a favorite?: " + isMovieInFavorites);
             cursor.close();
             return isMovieInFavorites;
         }
@@ -245,6 +273,8 @@ public class DetailsActivity extends AppCompatActivity
                 Log.d(TAG, "Favorite deleted : " + deleteItem);
             }
         } else {
+            Movie movie = getMovie();
+
             ContentValues values = new ContentValues();
             values.put(FavoritessEntry.COLUMN_MOVIE_ID, movieId);
             values.put(FavoritessEntry.COLUMN_TITLE, movie.getTitle());
@@ -264,6 +294,29 @@ public class DetailsActivity extends AppCompatActivity
 
         getContentResolver().notifyChange(FavoritessEntry.CONTENT_URI, null, false);
 
+    }
+
+    private void showSnack(@ConnectivityUtils.ConnectivityState int connectivityState) {
+        View anchorView = findViewById(R.id.details_scroll_view);
+        final Snackbar bar = ViewFactory.getSnackbar(connectivityState, anchorView, new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                restartLoader();
+            }
+        });
+        bar.show();
+    }
+
+    @ConnectivityUtils.ConnectivityState
+    private int getConnectivityState() {
+        return ConnectivityUtils.checkConnectivity(this);
+    }
+
+    @Override
+    public void onNetworkActive() {
+        if(!adapter.hasData()) {
+            showSnack(CONNECTED);
+        }
     }
 
     private class ReviewLoaderCallbacks implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -287,13 +340,16 @@ public class DetailsActivity extends AppCompatActivity
 
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor reviewsCursor) {
+            int connectionState = getConnectivityState();
             if(reviewsCursor != null && reviewsCursor.getCount() > 0) {
                 adapter.swapReviewsCursor(reviewsCursor);
-            } else {
+            } else if(connectionState == CONNECTED) {
                 Intent intent = new Intent(DetailsActivity.this, MoviesIntentService.class);
                 intent.setAction(MoviesRequestTasks.ACTION_REQUEST_REVIEW_DATA);
                 intent.putExtra(MoviesIntentService.EXTRA_MOVIE_ID, movieId);
                 startService(intent);
+            } else {
+                showSnack(DISCONNECTED);
             }
         }
 
@@ -324,13 +380,17 @@ public class DetailsActivity extends AppCompatActivity
 
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor trailersCursor) {
+            int connectionState = getConnectivityState();
+
             if(trailersCursor != null && trailersCursor.getCount() > 0) {
                 adapter.swapTrailersCursor(trailersCursor);
-            } else {
+            } else if(connectionState == CONNECTED) {
                 Intent intent = new Intent(DetailsActivity.this, MoviesIntentService.class);
                 intent.setAction(MoviesRequestTasks.ACTION_REQUEST_TRAILER_DATA);
                 intent.putExtra(MoviesIntentService.EXTRA_MOVIE_ID, movieId);
                 startService(intent);
+            } else {
+                showSnack(DISCONNECTED);
             }
         }
 

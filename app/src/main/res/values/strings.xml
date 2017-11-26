@@ -20,4 +20,7 @@
 
     <string name="share_title">Share %1$s Trailer!</string>
     <string name="share_error_message">This movie has not trailers to share!</string>
+    <string name="snackbar_button_label">Reload</string>
+    <string name="snackbar_connected_message">Connected to Internet. Retry Loading Movies</string>
+    <string name="snackbar_no_connection_message">No Connection</string>
 </resources>

@@ -32,6 +32,7 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     private static final String TAG = DetailsAdapter.class.getSimpleName();
 
+
     public interface OnItemClickListener {
         void onReviewSelected(String reviewUrlString);
         void onTrailerSelected(String trailerKey);
@@ -186,6 +187,10 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         this.reviewsCursor = null;
         this.labels = new ArrayList<>();
         this.viewItemList = new ArrayList<>();
+    }
+
+    public boolean hasData() {
+        return (viewItemList != null && viewItemList.size() > 0);
     }
 
     private void registerDataTypeItem(@ViewType int type, int dataOriginalIndex) {
