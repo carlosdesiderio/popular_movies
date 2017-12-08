@@ -16,7 +16,7 @@ import uk.me.desiderio.popularmovies.data.MoviesContract.TrailerEntry;
 public class MovieDBHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "movies.db";
-    private static final int DATABASE_VERSION = 11;
+    private static final int DATABASE_VERSION = 21;
 
     public MovieDBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -34,7 +34,11 @@ public class MovieDBHelper extends SQLiteOpenHelper {
                 MoviesEntry.COLUMN_VOTE_AVERAGE + " REAL NOT NULL, " +
                 MoviesEntry.COLUMN_POSTER_URL + " TEXT NOT NULL, " +
                 MoviesEntry.COLUMN_FEED_TYPE + " TEXT NOT NULL, " +
+                MoviesEntry._TIME_UPDATED + " TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP , " +
                 " UNIQUE (" + MoviesEntry.COLUMN_MOVIE_ID + ") ON CONFLICT REPLACE);";
+        final String SQL_MOVIES_UPDATE_TIMESTAMP_TRIGGER = getUpdateTimeStampTrigger(MoviesEntry.TABLE_NAME,
+                MoviesEntry._TIME_UPDATED,
+                MoviesEntry._ID);
 
         final String SQL_CREATE_TRAILER_TABLE = "CREATE TABLE " + TrailerEntry.TABLE_NAME + "(" +
                 TrailerEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -42,9 +46,13 @@ public class MovieDBHelper extends SQLiteOpenHelper {
                 TrailerEntry.COLUMN_NAME + " TEXT NOT NULL, " +
                 TrailerEntry.COLUMN_KEY + " TEXT NOT NULL, " +
                 TrailerEntry.COLUMN_MOVIES_FOREING_KEY + " INTEGER NOT NULL, " +
+                TrailerEntry._TIME_UPDATED + " TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
                 "FOREIGN KEY (" + TrailerEntry.COLUMN_MOVIES_FOREING_KEY + ") REFERENCES " + MoviesEntry.TABLE_NAME + " (" + MoviesEntry.COLUMN_MOVIE_ID + ")" +
                 "ON UPDATE CASCADE ON DELETE CASCADE" +
                 " UNIQUE (" + TrailerEntry.COLUMN_TRAILER_ID + ") ON CONFLICT REPLACE);";
+        final String SQL_TRAILER_UPDATE_TIMESTAMP_TRIGGER = getUpdateTimeStampTrigger(TrailerEntry.TABLE_NAME,
+                TrailerEntry._TIME_UPDATED,
+                TrailerEntry._ID);
 
         final String SQL_CREATE_REVIEW_TABLE = "CREATE TABLE " + ReviewEntry.TABLE_NAME + " (" +
                 ReviewEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -53,9 +61,13 @@ public class MovieDBHelper extends SQLiteOpenHelper {
                 ReviewEntry.COLUMN_CONTENT + " TEXT NOT NULL, " +
                 ReviewEntry.COLUMN_URL + " TEXT NOT NULL, " +
                 ReviewEntry.COLUMN_MOVIES_FOREING_KEY + " INTEGER NOT NULL, " +
+                ReviewEntry._TIME_UPDATED + " TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
                 "FOREIGN KEY (" + ReviewEntry.COLUMN_MOVIES_FOREING_KEY + ") REFERENCES " + MoviesEntry.TABLE_NAME + " (" + MoviesEntry.COLUMN_MOVIE_ID + ")" +
                 "ON UPDATE CASCADE ON DELETE CASCADE" +
                 " UNIQUE (" + ReviewEntry.COLUMN_REVIEW_ID + ") ON CONFLICT REPLACE);";
+        final String SQL_REVIEW_UPDATE_TIMESTAMP_TRIGGER = getUpdateTimeStampTrigger(ReviewEntry.TABLE_NAME,
+                ReviewEntry._TIME_UPDATED,
+                ReviewEntry._ID);
 
         final String SQL_CREATE_FAVORITES_TABLE = "CREATE TABLE " + FavoritessEntry.TABLE_NAME + " (" +
                 FavoritessEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -72,6 +84,23 @@ public class MovieDBHelper extends SQLiteOpenHelper {
         sqLiteDatabase.execSQL(SQL_CREATE_TRAILER_TABLE);
         sqLiteDatabase.execSQL(SQL_CREATE_REVIEW_TABLE);
         sqLiteDatabase.execSQL(SQL_CREATE_FAVORITES_TABLE);
+
+        sqLiteDatabase.execSQL(SQL_MOVIES_UPDATE_TIMESTAMP_TRIGGER);
+        sqLiteDatabase.execSQL(SQL_TRAILER_UPDATE_TIMESTAMP_TRIGGER);
+        sqLiteDatabase.execSQL(SQL_REVIEW_UPDATE_TIMESTAMP_TRIGGER);
+
+
+    }
+
+    private static String getUpdateTimeStampTrigger(String tableName, String lastUpdateColumnName, String idColumnName) {
+        String triggerName = String.format("update_%s_timestamp_trigger", tableName);
+        return  "CREATE TRIGGER " + triggerName +
+                "AFTER INSERT ON " + tableName + " FOR EACH ROW" +
+                " BEGIN " +
+                "  UPDATE " + tableName +
+                "    SET " + lastUpdateColumnName + " = current_timestamp" +
+                "    WHERE " + idColumnName + " = NEW." + idColumnName + ";" +
+                " END";
     }
 
     @Override

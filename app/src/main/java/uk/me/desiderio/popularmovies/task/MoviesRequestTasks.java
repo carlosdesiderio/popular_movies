@@ -39,8 +39,6 @@ public class MoviesRequestTasks {
     public static final String ACTION_REQUEST_TRAILER_DATA = "request_trailer_data";
     public static final String ACTION_REQUEST_REVIEW_DATA = "request_review_data";
 
-    //TODO check connection before making request
-
     static void executeTask(@NonNull Context context, @Nullable Intent intent) {
         if(intent == null) {
             return;

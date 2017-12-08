@@ -3,11 +3,14 @@ package uk.me.desiderio.popularmovies.data;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Contract for the movies database
  */
 public class MoviesContract {
 
+    public static final long STALE_DATA_MAX_LIFE_SPAN = TimeUnit.HOURS.toMillis(1);
 
     public static final String CONTENT_AUTHORITY = "uk.me.desiderio.popularmovies";
     public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
@@ -18,7 +21,11 @@ public class MoviesContract {
     public static final String PATH_REVIEWS = "reviews";
     public static final String PATH_FAVORITES = "favorite";
 
-    public static final class MoviesEntry implements BaseColumns {
+    public interface TimedEntry extends BaseColumns {
+        String _TIME_UPDATED = "_time";
+    }
+
+    public static final class MoviesEntry implements TimedEntry {
         public static final Uri CONTENT_URI = BASE_CONTENT_URI.
                 buildUpon().
                 appendPath(PATH_MOVIES).
@@ -35,7 +42,7 @@ public class MoviesContract {
         public static final String COLUMN_FEED_TYPE = "feed";
     }
 
-    public static final class TrailerEntry implements BaseColumns {
+    public static final class TrailerEntry implements TimedEntry {
         public static final Uri CONTENT_URI = BASE_CONTENT_URI.
                 buildUpon().
                 appendPath(PATH_TRAILERS).
@@ -50,7 +57,7 @@ public class MoviesContract {
 
     }
 
-    public static final class ReviewEntry implements BaseColumns {
+    public static final class ReviewEntry implements TimedEntry {
         public static final Uri CONTENT_URI = BASE_CONTENT_URI.
                 buildUpon().
                 appendPath(PATH_REVIEWS).

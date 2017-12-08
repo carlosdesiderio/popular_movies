@@ -37,10 +37,11 @@ import uk.me.desiderio.popularmovies.network.ConnectivityUtils;
 import uk.me.desiderio.popularmovies.network.MovieDatabaseRequestUtils;
 import uk.me.desiderio.popularmovies.task.MoviesIntentService;
 import uk.me.desiderio.popularmovies.task.MoviesRequestTasks;
-import uk.me.desiderio.popularmovies.view.ViewFactory;
+import uk.me.desiderio.popularmovies.view.ViewUtils;
 
 import static uk.me.desiderio.popularmovies.network.ConnectivityUtils.CONNECTED;
 import static uk.me.desiderio.popularmovies.network.ConnectivityUtils.DISCONNECTED;
+import static uk.me.desiderio.popularmovies.view.ViewUtils.hasAnyDataToShow;
 
 public class DetailsActivity extends AppCompatActivity
         implements DetailsAdapter.OnItemClickListener, ConnectivityManager.OnNetworkActiveListener {
@@ -51,6 +52,7 @@ public class DetailsActivity extends AppCompatActivity
 
     private static final int TRAILERS_LOADER_ID = 500;
     private static final int REVIEWS_LOADER_ID = 600;
+
 
     private RecyclerView recyclerView;
     private DetailsAdapter adapter;
@@ -201,7 +203,6 @@ public class DetailsActivity extends AppCompatActivity
 
         startActivity(Intent.createChooser(intent, title));
         } else {
-            // TODO change to material
             Toast.makeText(this, R.string.share_error_message, Toast.LENGTH_SHORT).show();
         }
     }
@@ -298,7 +299,7 @@ public class DetailsActivity extends AppCompatActivity
 
     private void showSnack(@ConnectivityUtils.ConnectivityState int connectivityState) {
         View anchorView = findViewById(R.id.details_scroll_view);
-        final Snackbar bar = ViewFactory.getSnackbar(connectivityState, anchorView, new View.OnClickListener() {
+        final Snackbar bar = ViewUtils.getSnackbar(connectivityState, anchorView, new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 restartLoader();
@@ -316,6 +317,34 @@ public class DetailsActivity extends AppCompatActivity
     public void onNetworkActive() {
         if(!adapter.hasData()) {
             showSnack(CONNECTED);
+        }
+    }
+
+
+    private void requestReviewData(Context context, String movieId) {
+        int connectionState = getConnectivityState();
+
+        if (connectionState == CONNECTED) {
+            Intent intent = new Intent(context, MoviesIntentService.class);
+            intent.setAction(MoviesRequestTasks.ACTION_REQUEST_REVIEW_DATA);
+            intent.putExtra(MoviesIntentService.EXTRA_MOVIE_ID, movieId);
+            startService(intent);
+        } else {
+            showSnack(DISCONNECTED);
+        }
+    }
+
+    private void requestTrailerData(Context context, String movieId) {
+        int connectionState = getConnectivityState();
+
+        if (connectionState == CONNECTED) {
+            Intent intent = new Intent(context, MoviesIntentService.class);
+            intent.setAction(MoviesRequestTasks.ACTION_REQUEST_TRAILER_DATA);
+            intent.putExtra(MoviesIntentService.EXTRA_MOVIE_ID, movieId);
+            startService(intent);
+        } else {
+            showSnack(DISCONNECTED);
+
         }
     }
 
@@ -340,16 +369,10 @@ public class DetailsActivity extends AppCompatActivity
 
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor reviewsCursor) {
-            int connectionState = getConnectivityState();
-            if(reviewsCursor != null && reviewsCursor.getCount() > 0) {
+            if (hasAnyDataToShow(DetailsActivity.this, reviewsCursor)) {
                 adapter.swapReviewsCursor(reviewsCursor);
-            } else if(connectionState == CONNECTED) {
-                Intent intent = new Intent(DetailsActivity.this, MoviesIntentService.class);
-                intent.setAction(MoviesRequestTasks.ACTION_REQUEST_REVIEW_DATA);
-                intent.putExtra(MoviesIntentService.EXTRA_MOVIE_ID, movieId);
-                startService(intent);
             } else {
-                showSnack(DISCONNECTED);
+                requestReviewData(DetailsActivity.this, movieId);
             }
         }
 
@@ -380,17 +403,12 @@ public class DetailsActivity extends AppCompatActivity
 
         @Override
         public void onLoadFinished(Loader<Cursor> loader, Cursor trailersCursor) {
-            int connectionState = getConnectivityState();
-
-            if(trailersCursor != null && trailersCursor.getCount() > 0) {
+            if (hasAnyDataToShow(DetailsActivity.this, trailersCursor)) {
+                Log.d(TAG, "puerco : trailer: updating cursor -------- ");
                 adapter.swapTrailersCursor(trailersCursor);
-            } else if(connectionState == CONNECTED) {
-                Intent intent = new Intent(DetailsActivity.this, MoviesIntentService.class);
-                intent.setAction(MoviesRequestTasks.ACTION_REQUEST_TRAILER_DATA);
-                intent.putExtra(MoviesIntentService.EXTRA_MOVIE_ID, movieId);
-                startService(intent);
             } else {
-                showSnack(DISCONNECTED);
+                Log.d(TAG, "puerco : trailer: Reloading data.....");
+                requestTrailerData(DetailsActivity.this, movieId);
             }
         }
 
@@ -399,4 +417,5 @@ public class DetailsActivity extends AppCompatActivity
             adapter.swapTrailersCursor(null);
         }
     }
+
 }

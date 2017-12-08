@@ -16,10 +16,11 @@
         android:layout_height="match_parent">
 
         <TextView
+            android:id="@+id/empty_state_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="@string/main_empty_state_message"
+            android:text="@string/main_empty_state_default_message"
             android:textAppearance="@style/TextAppearance.AppCompat.Title" />
 
     </RelativeLayout>

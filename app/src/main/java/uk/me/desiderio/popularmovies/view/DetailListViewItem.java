@@ -9,22 +9,22 @@ import java.util.Comparator;
 import uk.me.desiderio.popularmovies.DetailsActivity;
 
 /**
- * Helper class to allow the {@link DetailsActivity} list to show different types of view depending
+ * Helper class to allow the {@link DetailsActivity} list to show different types of views depending
  * on the data to show.
  *
- * Holds view type and original index of the data structure related to this type.
+ * Holds the view type and original data list index as properties. {@link DetailsActivity} will hold
+ * two different list for the data related to the trailers and reviews
  *
  * Provides a comparator so that the list view show the trailers first and the reviews below them.
  *
  */
 public class DetailListViewItem{
 
+    /** identifies view types for the recycling view.
+     *  provides priority order in the list */
     @Retention(RetentionPolicy.SOURCE)
-@IntDef({TRAILER_HEADING_ITEM_TYPE, TRAILER_ITEM_TYPE, REVIEW_HEADING_ITEM_TYPE, REVIEW_ITEM_TYPE})
-public @interface ViewType { }
-
-    // identifies view types for the recycling view.
-    // provides priority order in the list
+    @IntDef({TRAILER_HEADING_ITEM_TYPE, TRAILER_ITEM_TYPE, REVIEW_HEADING_ITEM_TYPE, REVIEW_ITEM_TYPE})
+    public @interface ViewType { }
     public static final int TRAILER_HEADING_ITEM_TYPE = 1;
     public static final int TRAILER_ITEM_TYPE = 2;
     public static final int REVIEW_HEADING_ITEM_TYPE = 3;

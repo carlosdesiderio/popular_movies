@@ -8,6 +8,7 @@ import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.IntDef;
+import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.LoaderManager;
@@ -20,11 +21,14 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+import uk.me.desiderio.popularmovies.data.DataUtils;
 import uk.me.desiderio.popularmovies.data.Movie;
+import uk.me.desiderio.popularmovies.data.MoviesContract;
 import uk.me.desiderio.popularmovies.data.MoviesContract.FavoritessEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.MoviesEntry;
 import uk.me.desiderio.popularmovies.data.MoviesCursorWrapper;
@@ -33,7 +37,8 @@ import uk.me.desiderio.popularmovies.network.ConnectivityUtils.ConnectivityState
 import uk.me.desiderio.popularmovies.network.MovieFeedType;
 import uk.me.desiderio.popularmovies.task.MoviesIntentService;
 import uk.me.desiderio.popularmovies.task.MoviesRequestTasks;
-import uk.me.desiderio.popularmovies.view.ViewFactory;
+import uk.me.desiderio.popularmovies.view.ViewUtils;
+import uk.me.desiderio.popularmovies.view.ViewUtils.ViewDataAvailability;
 
 import static uk.me.desiderio.popularmovies.network.ConnectivityUtils.CONNECTED;
 import static uk.me.desiderio.popularmovies.network.ConnectivityUtils.DISCONNECTED;
@@ -41,6 +46,10 @@ import static uk.me.desiderio.popularmovies.network.MovieFeedType.FAVORITES_MOVI
 import static uk.me.desiderio.popularmovies.network.MovieFeedType.FeedType;
 import static uk.me.desiderio.popularmovies.network.MovieFeedType.POPULAR_MOVIES_FEED;
 import static uk.me.desiderio.popularmovies.network.MovieFeedType.TOP_RATED_MOVIES_FEED;
+import static uk.me.desiderio.popularmovies.view.ViewUtils.FLAG_FRESH_VIEW_DATA;
+import static uk.me.desiderio.popularmovies.view.ViewUtils.FLAG_NO_VIEW_DATA;
+import static uk.me.desiderio.popularmovies.view.ViewUtils.FLAG_STALE_VIEW_DATA;
+import static uk.me.desiderio.popularmovies.view.ViewUtils.hasAnyDataToShow;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
         MovieAdapter.OnItemClickListener,
@@ -58,6 +67,7 @@ ConnectivityManager.OnNetworkActiveListener{
 
     private MovieAdapter adapter;
     private View emptyStateView;
+    private TextView emptyStateTextView;
 
     @FeedType
     private String currentFeedType;
@@ -72,6 +82,7 @@ ConnectivityManager.OnNetworkActiveListener{
         // instantiates & sets RecyclerView
         RecyclerView recyclerView = findViewById(R.id.movie_list_recycler_view);
         emptyStateView = findViewById(R.id.empty_state_view);
+        emptyStateTextView = (TextView) emptyStateView.findViewById(R.id.empty_state_text_view);
 
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, getResources().getInteger(R.integer.main_list_view_column_span));
 
@@ -82,7 +93,6 @@ ConnectivityManager.OnNetworkActiveListener{
         recyclerView.setAdapter(adapter);
         recyclerView.setHasFixedSize(true);
 
-        // TODO refractor so that it can be included in the changedFeedtyp
         currentFeedType = POPULAR_MOVIES_FEED;
         Bundle initialLoaderBundle = getMovieLoaderBundle(POPULAR_MOVIES_FEED);
         getSupportLoaderManager().initLoader(MOVIE_LOADER_ID, initialLoaderBundle, this);
@@ -121,16 +131,28 @@ ConnectivityManager.OnNetworkActiveListener{
                 this);
     }
 
+    @NonNull
     private Bundle getMovieLoaderBundle(@FeedType String feedType) {
         Bundle bundle = new Bundle();
         bundle.putString(MoviesIntentService.EXTRA_FEED_TYPE, feedType);
         return bundle;
     }
 
+    private void setEmptyStateViewText(@NonNull @FeedType String feedType) {
+        switch (feedType) {
+            case MovieFeedType.FAVORITES_MOVIES_FEED:
+                emptyStateTextView.setText(R.string.main_empty_state_favorite_message);
+                break;
+            default:
+                emptyStateTextView.setText(R.string.main_empty_state_default_message);
+        }
+    }
 
-    private void setEmptyStateViewVisibility(@EmptyStateViewVisibility int visibility) {
+
+    private void setEmptyStateViewVisibility(@NonNull @EmptyStateViewVisibility int visibility, @NonNull @FeedType String feedType) {
         switch ((visibility)) {
             case VISIBLE:
+                setEmptyStateViewText(feedType);
                 emptyStateView.setVisibility(View.VISIBLE);
                 break;
             case INVISIBLE:
@@ -140,14 +162,15 @@ ConnectivityManager.OnNetworkActiveListener{
     }
 
     @FeedType
-    private void changeFeedType(String feedType) {
+    private void changeFeedType(@NonNull String feedType) {
         currentFeedType = feedType;
         resetLoaderWithFeedType();
     }
 
-    private void showSnack(@ConnectivityState int connectivityState) {
+    private void showSnack(@NonNull @ConnectivityState int connectivityState) {
+        // shows snack bar displaying different message depending on connection state
         View anchorView = findViewById(R.id.movie_list_recycler_view);
-        final Snackbar bar = ViewFactory.getSnackbar(connectivityState, anchorView, new View.OnClickListener() {
+        final Snackbar bar = ViewUtils.getSnackbar(connectivityState, anchorView, new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 resetLoaderWithFeedType();
@@ -156,6 +179,7 @@ ConnectivityManager.OnNetworkActiveListener{
         bar.show();
     }
 
+    @NonNull
     @ConnectivityState
     private int getConnectivityState() {
         return ConnectivityUtils.checkConnectivity(this);
@@ -182,7 +206,6 @@ ConnectivityManager.OnNetworkActiveListener{
 
     @Override
     public Loader<Cursor> onCreateLoader(int loaderId, final Bundle args) {
-        // TODO revise which fields are used then create Projection + cursor fields numbers consttant
         return new AsyncTaskLoader<Cursor>(this) {
 
             private final ContentObserver obs = new ContentObserver(new Handler()) {
@@ -204,7 +227,7 @@ ConnectivityManager.OnNetworkActiveListener{
                 // makes sure that the favorite view updates after removing movie from the favorite list
                 boolean hasChanged = takeContentChanged();
                 if (cursor == null || hasChanged) {
-                    setEmptyStateViewVisibility(VISIBLE);
+                    setEmptyStateViewVisibility(VISIBLE, currentFeedType);
                     forceLoad();
                 } else {
                     deliverResult(cursor);
@@ -213,7 +236,7 @@ ConnectivityManager.OnNetworkActiveListener{
 
             @Override
             public Cursor loadInBackground() {
-                @FeedType String feedType = args.getString(MoviesIntentService.EXTRA_FEED_TYPE);
+                String feedType = args.getString(MoviesIntentService.EXTRA_FEED_TYPE);
 
                 Cursor cursor = null;
                 Cursor cursorWrapper = null;
@@ -264,36 +287,54 @@ ConnectivityManager.OnNetworkActiveListener{
         };
     }
 
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        // data.getCount > 0
-        if (data != null && data.getCount() > 0) {
-            adapter.swapCursor(data);
-            setEmptyStateViewVisibility(INVISIBLE);
-
-        } else {
-            MoviesCursorWrapper cursorWrapper = (MoviesCursorWrapper) data;
-            String feedType = cursorWrapper.getFeedType();
-
-            // only request data for popular and top rate movies
-            if(feedType.equals(MovieFeedType.POPULAR_MOVIES_FEED) ||
-                    feedType.equals(MovieFeedType.TOP_RATED_MOVIES_FEED)) {
-                requestServerData(feedType);
-            }
+    private void onLoadFavoriteFinished(Cursor cursor) {
+        if (cursor != null && cursor.getCount() > 0) {
+            adapter.swapCursor(cursor);
+            setEmptyStateViewVisibility(INVISIBLE, currentFeedType);
         }
     }
 
-    public void requestServerData(@FeedType String feedType) {
+    private void onLoadMoviesFinished(Cursor cursor, @FeedType String feedType) {
+        if(hasAnyDataToShow(MainActivity.this, cursor)) {
+            adapter.swapCursor(cursor);
+            setEmptyStateViewVisibility(INVISIBLE, currentFeedType);
+        } else {
+            requestServerData(feedType);
+        }
+    }
+
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        MoviesCursorWrapper cursorWrapper = (MoviesCursorWrapper) data;
+        String feedType = cursorWrapper.getFeedType();
+
+        switch (feedType) {
+            case POPULAR_MOVIES_FEED:
+                onLoadMoviesFinished(data, feedType);
+                break;
+            case TOP_RATED_MOVIES_FEED:
+                onLoadMoviesFinished(data, feedType);
+                break;
+            case FAVORITES_MOVIES_FEED:
+                onLoadFavoriteFinished(data);
+                break;
+        }
+    }
+
+    public void requestServerData(@NonNull @FeedType String feedType) {
         int connectivityState = getConnectivityState();
 
         switch (connectivityState) {
             case CONNECTED:
+                Log.d(TAG, "requestServerData: device IS connected : feed type " + feedType);
                 Intent intent = new Intent(this, MoviesIntentService.class);
                 intent.setAction(MoviesRequestTasks.ACTION_REQUEST_MOVIE_DATA);
                 intent.putExtra(MoviesIntentService.EXTRA_FEED_TYPE, feedType);
                 startService(intent);
                 break;
             case DISCONNECTED:
+                Log.d(TAG, "requestServerData: device is NOT connected: feed type " + feedType);
                 showSnack(DISCONNECTED);
                 break;
         }
@@ -302,6 +343,6 @@ ConnectivityManager.OnNetworkActiveListener{
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         adapter.swapCursor(null);
-        setEmptyStateViewVisibility(VISIBLE);
+        setEmptyStateViewVisibility(VISIBLE, currentFeedType);
     }
 }

@@ -35,8 +35,6 @@ public class MovieContentProvider extends ContentProvider {
 
     public static final UriMatcher uriMatcher = buildUriMatcher();
 
-    // TODO add urimatcher test lesson 10 video 15
-
     public static UriMatcher buildUriMatcher() {
         UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
