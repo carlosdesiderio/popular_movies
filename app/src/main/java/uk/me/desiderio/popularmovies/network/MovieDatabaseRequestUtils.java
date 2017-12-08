@@ -1,6 +1,8 @@
 package uk.me.desiderio.popularmovies.network;
 
 import android.net.Uri;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.IOException;
@@ -33,12 +35,10 @@ public class MovieDatabaseRequestUtils {
     private static final String VIDEO_URL_PATH_STRING = "%1$s/videos";
     private static final String REVIEWS_URL_PATH_STRING = "%1$s/reviews";
 
-    // YouTube end point
-    private static final String YOUTUBE_URL_STRING = "https://www.youtube.com/watch?v=";
-
     /**
      * Provides Movies DB endpoint to retrieve list of trailer of the movie identify by its argument
      */
+    @Nullable
     public static URL getMovieTrailersUrl(String movieId) {
         String videoUrlPath = String.format(VIDEO_URL_PATH_STRING, movieId);
         Uri uri = Uri.parse(BASE_URL_STRING).buildUpon()
@@ -52,6 +52,7 @@ public class MovieDatabaseRequestUtils {
     /**
      * Provides Movies DB endpoint to retrieve reviews about the movie identify by its argument
      */
+    @Nullable
     public static URL getMovieReviewsUrl(String movieId) {
         String reviewsUrlPath = String.format(REVIEWS_URL_PATH_STRING, movieId);
         Uri uri = Uri.parse(BASE_URL_STRING).buildUpon()
@@ -79,6 +80,7 @@ public class MovieDatabaseRequestUtils {
     /**
      * Provides Movies DB endpoint to retrieve list of Popular Movies
      */
+    @Nullable
     public static URL getPopularMoviesUrl() {
         Uri uri = Uri.parse(BASE_URL_STRING).buildUpon()
                 .appendPath(POPULAR_MOVIES_URL_PATH)
@@ -92,6 +94,7 @@ public class MovieDatabaseRequestUtils {
     /**
      * Provides Movies DB endpoint to retrieve list of Top Rated Movies
      */
+    @Nullable
     public static URL getTopRatedMoviesUrl() {
         Uri uri = Uri.parse(BASE_URL_STRING).buildUpon()
                 .appendPath(TOP_RATED_MOVIES_URL_PATH)
@@ -101,7 +104,8 @@ public class MovieDatabaseRequestUtils {
         return getUrlFromURI(uri);
     }
 
-    private static URL getUrlFromURI(Uri uri) {
+    @Nullable
+    private static URL getUrlFromURI(@NonNull Uri uri) {
         URL url = null;
         try {
             url = new URL(uri.toString());
@@ -117,7 +121,7 @@ public class MovieDatabaseRequestUtils {
     /**
      * Returns HTTP response as a String.
      */
-    public static String getResponseFromHttpUrl(URL url) throws IOException {
+    public static String getResponseFromHttpUrl(@NonNull URL url) throws IOException {
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
         try {
             InputStream in = urlConnection.getInputStream();

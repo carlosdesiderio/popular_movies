@@ -114,7 +114,6 @@
             android:orientation="vertical"
             app:layout_constraintGuide_percent="0.5" />
 
-        <!--suppress MissingConstraints -->
         <android.support.constraint.Barrier
             android:id="@+id/barrier"
             android:layout_width="wrap_content"
@@ -122,8 +121,11 @@
             app:barrierDirection="bottom"
             app:constraint_referenced_ids="detailsPosterImageView,voteTextView"
             tools:layout_editor_absoluteX="229dp"
-            tools:layout_editor_absoluteY="141dp" />
+            tools:layout_editor_absoluteY="141dp"
+            tools:ignore="MissingConstraints"/>
 
+
+        <!--suppress MissingConstraints -->
         <android.support.constraint.Guideline
             android:id="@+id/right_margin_guideline"
             android:layout_width="wrap_content"

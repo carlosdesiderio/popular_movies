@@ -31,9 +31,9 @@ public class MoviesRequestTasks {
 
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({ACTION_REQUEST_MOVIE_DATA,
-                ACTION_REQUEST_TRAILER_DATA,
-                ACTION_REQUEST_REVIEW_DATA})
-    @interface ActionName{}
+            ACTION_REQUEST_TRAILER_DATA,
+            ACTION_REQUEST_REVIEW_DATA})
+    private @interface ActionName{}
 
     public static final String ACTION_REQUEST_MOVIE_DATA = "request_movie_data";
     public static final String ACTION_REQUEST_TRAILER_DATA = "request_trailer_data";
@@ -68,12 +68,12 @@ public class MoviesRequestTasks {
                     break;
                 }
                 default:
-                    new IllegalArgumentException("Unknoww action: " + action);
+                    throw new IllegalArgumentException("Unknoww action: " + action);
             }
         }
     }
 
-    private static ContentValues[] requestMovieData(@FeedType String feedType) {
+    private static ContentValues[] requestMovieData(@NonNull @FeedType String feedType) {
 
         String responseString;
         try {
@@ -82,7 +82,7 @@ public class MoviesRequestTasks {
             responseString = MovieDatabaseRequestUtils.getResponseFromHttpUrl(url);
             // parses json data into a list of Movie objects
             return MovieDatabaseJSONParserUtils.parseMovieJsonString(responseString);
-        } catch (IOException | JSONException e) {
+        } catch (@NonNull IOException | JSONException e) {
             e.printStackTrace();
         }
 
@@ -91,32 +91,36 @@ public class MoviesRequestTasks {
 
     private static ContentValues[] requestTrailerData(@NonNull String movieId) {
         URL url = MovieDatabaseRequestUtils.getMovieTrailersUrl(movieId);
-        try {
-            // requests data from movie db service
-            String response = MovieDatabaseRequestUtils.getResponseFromHttpUrl(url);
-            // parses json data into a list of Movie objects
-            return MovieDatabaseJSONParserUtils.parseTrailerJsonString(response);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (url != null) {
+            try {
+                // requests data from movie db service
+                String response = MovieDatabaseRequestUtils.getResponseFromHttpUrl(url);
+                // parses json data into a list of Movie objects
+                return MovieDatabaseJSONParserUtils.parseTrailerJsonString(response);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         return null;
     }
 
     private static ContentValues[] requestReviewData(@NonNull String movieId) {
         URL url = MovieDatabaseRequestUtils.getMovieReviewsUrl(movieId);
-        try {
-            // requests data from movie db service
-            String response = MovieDatabaseRequestUtils.getResponseFromHttpUrl(url);
-            // parses json data into a list of Movie objects
-            return MovieDatabaseJSONParserUtils.parseReviewsJsonString(response);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (url != null) {
+            try {
+                // requests data from movie db service
+                String response = MovieDatabaseRequestUtils.getResponseFromHttpUrl(url);
+                // parses json data into a list of Movie objects
+                return MovieDatabaseJSONParserUtils.parseReviewsJsonString(response);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         return null;
     }
 
-    private static void bulkInsertMoviesInDatabase(@NonNull Context context, ContentValues[] movies, @NonNull String feedType) {
+    private static void bulkInsertMoviesInDatabase(@NonNull Context context, @Nullable ContentValues[] movies, @NonNull String feedType) {
         if (movies != null && movies.length > 0) {
             ContentValues[] contentValues = putValueInto(movies,
                     MoviesContract.MoviesEntry.COLUMN_FEED_TYPE,
@@ -129,7 +133,7 @@ public class MoviesRequestTasks {
         }
     }
 
-    private static void bulkInsertTrailersInDatabase(@NonNull Context context, ContentValues[] trailers, @NonNull String movieId) {
+    private static void bulkInsertTrailersInDatabase(@NonNull Context context, @Nullable ContentValues[] trailers, @NonNull String movieId) {
         if (trailers != null && trailers.length > 0) {
             ContentValues[] contentValues = putValueInto(trailers,
                     MoviesContract.TrailerEntry.COLUMN_MOVIES_FOREING_KEY,
@@ -142,7 +146,7 @@ public class MoviesRequestTasks {
         }
     }
 
-    private static void bulkInsertReviewsInDatabase(@NonNull Context context, ContentValues[] reviews, @NonNull String movieId) {
+    private static void bulkInsertReviewsInDatabase(@NonNull Context context, @Nullable ContentValues[] reviews, @NonNull String movieId) {
         if (reviews != null && reviews.length > 0) {
             ContentValues[] contentValues = putValueInto(reviews,
                     MoviesContract.ReviewEntry.COLUMN_MOVIES_FOREING_KEY,
@@ -156,19 +160,19 @@ public class MoviesRequestTasks {
     }
 
 
-    private static URL getMoviesRequestUrl(@FeedType String feedType) {
+    private static URL getMoviesRequestUrl(@NonNull @FeedType String feedType) {
         switch (feedType) {
             case MovieFeedType.POPULAR_MOVIES_FEED:
                 return MovieDatabaseRequestUtils.getPopularMoviesUrl();
             case MovieFeedType.TOP_RATED_MOVIES_FEED:
                 return MovieDatabaseRequestUtils.getTopRatedMoviesUrl();
             default:
-                new IllegalArgumentException("Unknoww parameter: " + feedType);
+                throw new IllegalArgumentException("Unknoww parameter: " + feedType);
         }
-        return null;
     }
 
-    private static ContentValues[] putValueInto(ContentValues[] valuesArray, String key, String value) {
+    @NonNull
+    private static ContentValues[] putValueInto(@NonNull ContentValues[] valuesArray, String key, String value) {
         for (ContentValues aValuesArray : valuesArray) {
             aValuesArray.put(key, value);
         }

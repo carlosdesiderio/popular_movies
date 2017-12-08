@@ -1,6 +1,7 @@
 package uk.me.desiderio.popularmovies.data;
 
 import android.content.ContentProvider;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.UriMatcher;
@@ -23,19 +24,20 @@ import uk.me.desiderio.popularmovies.data.MoviesContract.TrailerEntry;
 
 public class MovieContentProvider extends ContentProvider {
 
-    public static final String TAG = MovieContentProvider.class.getSimpleName();
+    private static final String TAG = MovieContentProvider.class.getSimpleName();
 
-    public static final int MOVIES = 100;
-    public static final int MOVIES_WITH_ID = 101;
-    public static final int TRAILERS = 200;
-    public static final int TRAILERS_WITH_ID = 201;
-    public static final int REVIEWS = 300;
-    public static final int REVIEWS_WITH_ID = 301;
-    public static final int FAVORITES = 400;
+    private static final int MOVIES = 100;
+    private static final int MOVIES_WITH_ID = 101;
+    private static final int TRAILERS = 200;
+    private static final int TRAILERS_WITH_ID = 201;
+    private static final int REVIEWS = 300;
+    private static final int REVIEWS_WITH_ID = 301;
+    private static final int FAVORITES = 400;
 
-    public static final UriMatcher uriMatcher = buildUriMatcher();
+    private static final UriMatcher uriMatcher = buildUriMatcher();
 
-    public static UriMatcher buildUriMatcher() {
+    @NonNull
+    private static UriMatcher buildUriMatcher() {
         UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
         // movies directory
@@ -104,7 +106,9 @@ public class MovieContentProvider extends ContentProvider {
 
         Log.d(TAG, "Returning " + cursor.getCount() + " data items from table " +tableName );
 
-        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        if (getContentResolver() != null) {
+            cursor.setNotificationUri(getContentResolver(), uri);
+        }
 
         return cursor;
     }
@@ -142,7 +146,9 @@ public class MovieContentProvider extends ContentProvider {
                throw new UnsupportedOperationException("Unknown Uri: " + uri);
         }
 
-        getContext().getContentResolver().notifyChange(uri, null);
+        if(getContentResolver() != null) {
+            getContentResolver().notifyChange(uri, null);
+        }
 
         return returnUri;
     }
@@ -226,9 +232,17 @@ public class MovieContentProvider extends ContentProvider {
 
         if (rowInserted > 0) {
             Log.d(TAG, "Bulk insertion completed  : " + values.length + " data items");
-            getContext().getContentResolver().notifyChange(uri, null);
+            if (getContentResolver() != null) {
+                getContentResolver().notifyChange(uri, null);
+            }
         }
         return rowInserted;
+    }
+
+    @Nullable
+    @SuppressWarnings("ConstantConditions")
+    private ContentResolver getContentResolver() {
+        return getContext().getContentResolver();
     }
     
     // unsupported actions
@@ -252,7 +266,9 @@ public class MovieContentProvider extends ContentProvider {
 
         if (deletedRows > 0) {
             Log.d(TAG, "Delition completed  : " + deletedRows + " rows deleted");
-            getContext().getContentResolver().notifyChange(uri, null);
+            if (getContentResolver() != null) {
+                getContentResolver().notifyChange(uri, null);
+            }
         }
 
         return deletedRows;

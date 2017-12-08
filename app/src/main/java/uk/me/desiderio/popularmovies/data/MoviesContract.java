@@ -12,14 +12,14 @@ public class MoviesContract {
 
     public static final long STALE_DATA_MAX_LIFE_SPAN = TimeUnit.HOURS.toMillis(1);
 
-    public static final String CONTENT_AUTHORITY = "uk.me.desiderio.popularmovies";
-    public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
+    static final String CONTENT_AUTHORITY = "uk.me.desiderio.popularmovies";
+    private static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
 
-    public static final String PATH_MOVIES = "movies";
-    public static final String PATH_TRAILERS = "trailers";
-    public static final String PATH_REVIEWS = "reviews";
-    public static final String PATH_FAVORITES = "favorite";
+    static final String PATH_MOVIES = "movies";
+    static final String PATH_TRAILERS = "trailers";
+    static final String PATH_REVIEWS = "reviews";
+    static final String PATH_FAVORITES = "favorite";
 
     public interface TimedEntry extends BaseColumns {
         String _TIME_UPDATED = "_time";
@@ -31,7 +31,7 @@ public class MoviesContract {
                 appendPath(PATH_MOVIES).
                 build();
 
-        public static final String TABLE_NAME = "movies";
+        static final String TABLE_NAME = "movies";
 
         public static final String COLUMN_MOVIE_ID = "movieId";
         public static final String COLUMN_TITLE = "title";
@@ -48,7 +48,7 @@ public class MoviesContract {
                 appendPath(PATH_TRAILERS).
                 build();
 
-        public static final String TABLE_NAME = "trailers";
+        static final String TABLE_NAME = "trailers";
 
         public static final String COLUMN_TRAILER_ID = "id";
         public static final String COLUMN_NAME = "name";
@@ -63,7 +63,7 @@ public class MoviesContract {
                 appendPath(PATH_REVIEWS).
                 build();
 
-        public static final String TABLE_NAME = "reviews";
+        static final String TABLE_NAME = "reviews";
 
         public static final String COLUMN_REVIEW_ID = "id";
         public static final String COLUMN_AUTHOR = "author";
@@ -78,7 +78,7 @@ public class MoviesContract {
                 appendPath(PATH_FAVORITES).
                 build();
 
-        public static final String TABLE_NAME = "favorites";
+        static final String TABLE_NAME = "favorites";
 
         public static final String COLUMN_MOVIE_ID = "movieId";
         public static final String COLUMN_TITLE = "title";

@@ -1,6 +1,7 @@
 package uk.me.desiderio.popularmovies.view;
 
 import android.support.annotation.IntDef;
+import android.support.annotation.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -31,8 +32,8 @@ public class DetailListViewItem{
     public static final int REVIEW_ITEM_TYPE = 4;
 
 
-    private int originalIndex;
-    private int type;
+    private final int originalIndex;
+    private final int type;
 
     public DetailListViewItem(@ViewType int type, int originalIndex) {
         this.type = type;
@@ -50,7 +51,7 @@ public class DetailListViewItem{
     public static class ViewItemComparator implements Comparator<DetailListViewItem> {
 
         @Override
-        public int compare(DetailListViewItem v1, DetailListViewItem v2) {
+        public int compare(@NonNull DetailListViewItem v1, @NonNull DetailListViewItem v2) {
             if(v1.type < v2.getType()) {
                 return -1;
             } else if(v1.type > v2.getType()) {

@@ -19,7 +19,7 @@ public class DataUtils {
      * determines if data provided as its first parameter is older that the maximum data lifespan
      * defined by the the second parameter
      */
-    public static boolean isDataStale(@NonNull Cursor cursor, @NonNull long maxDataLifeSpan) {
+    public static boolean isDataStale(@NonNull Cursor cursor, @SuppressWarnings("SameParameterValue") long maxDataLifeSpan) {
         cursor.moveToFirst();
         String timestamp = cursor.getString(cursor.getColumnIndex(MoviesContract.MoviesEntry._TIME_UPDATED));
         SimpleDateFormat format = new SimpleDateFormat( "yyyy-MM-dd hh:mm:ss", Locale.UK );

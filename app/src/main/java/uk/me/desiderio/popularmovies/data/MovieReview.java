@@ -2,29 +2,28 @@ package uk.me.desiderio.popularmovies.data;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-
-import java.io.Serializable;
+import android.support.annotation.NonNull;
 
 /**
  * Data object to hold information about a movie review
  */
 
+@SuppressWarnings("unused")
 public class MovieReview implements Parcelable {
 
-    private String id;
-    private String author;
-    private String content;
-    private String url;
+    private final String id;
+    private final String author;
+    private final String content;
+    private final String url;
 
     public MovieReview(String id, String author, String content, String url) {
-
         this.id = id;
         this.author = author;
         this.content = content;
         this.url = url;
     }
 
-    private MovieReview(Parcel in) {
+    private MovieReview(@NonNull Parcel in) {
         id = in.readString();
         author = in.readString();
         content = in.readString();
@@ -53,7 +52,7 @@ public class MovieReview implements Parcelable {
     }
 
     @Override
-    public void writeToParcel(Parcel parcel, int i) {
+    public void writeToParcel(@NonNull Parcel parcel, int i) {
         parcel.writeString(id);
         parcel.writeString(author);
         parcel.writeString(content);
@@ -63,7 +62,7 @@ public class MovieReview implements Parcelable {
     @SuppressWarnings("unused")
     public static final Parcelable.Creator<MovieReview> CREATOR
             = new Parcelable.Creator<MovieReview>() {
-        public MovieReview createFromParcel(Parcel in) {
+        public MovieReview createFromParcel(@NonNull Parcel in) {
             return new MovieReview(in);
         }
 

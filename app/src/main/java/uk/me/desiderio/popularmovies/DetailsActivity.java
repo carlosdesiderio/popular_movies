@@ -9,6 +9,8 @@ import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -46,7 +48,7 @@ import static uk.me.desiderio.popularmovies.view.ViewUtils.hasAnyDataToShow;
 public class DetailsActivity extends AppCompatActivity
         implements DetailsAdapter.OnItemClickListener, ConnectivityManager.OnNetworkActiveListener {
 
-    public static final String TAG = DetailsActivity.class.getSimpleName();
+    private static final String TAG = DetailsActivity.class.getSimpleName();
 
     public static final String EXTRA_MOVIE = "extra_movie";
 
@@ -54,19 +56,14 @@ public class DetailsActivity extends AppCompatActivity
     private static final int REVIEWS_LOADER_ID = 600;
 
 
-    private RecyclerView recyclerView;
     private DetailsAdapter adapter;
     private Button favoriteButton;
     private ScrollView scrollView;
 
     private TrailerLoaderCallbacks trailerLoaderCallbacks;
-    private ReviewLoaderCallbacks reviewLoaderCallbacks;
 
+    @Nullable
     private Bundle movieBundle;
-   /* private Movie movie;
-    private String movieId;*/
-
-    private ConnectivityManager connectivityManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,10 +72,18 @@ public class DetailsActivity extends AppCompatActivity
 
         Intent intent = getIntent();
         movieBundle = intent.getExtras();
-        Movie movie = movieBundle.getParcelable(EXTRA_MOVIE);
 
-        Uri uri = MovieDatabaseRequestUtils.getMoviePosterUri(movie.getPosterURLPathString());
-        String releaseYear = movie.getDate().substring(0, movie.getDate().indexOf("-"));
+        Movie movie = null;
+        if(movieBundle != null) {
+            movie = movieBundle.getParcelable(EXTRA_MOVIE);
+        }
+
+        Uri uri = null;
+        String releaseYear = null;
+        if (movie != null) {
+            uri = MovieDatabaseRequestUtils.getMoviePosterUri(movie.getPosterURLPathString());
+            releaseYear = movie.getDate().substring(0, movie.getDate().indexOf("-"));
+        }
 
         TextView titleTextView = findViewById(R.id.titleTextView);
         TextView dateTextView = findViewById(R.id.dateTextView);
@@ -107,13 +112,15 @@ public class DetailsActivity extends AppCompatActivity
 
         Picasso.with(this).load(uri).into(posterImageView);
 
-        titleTextView.setText(movie.getTitle());
-        dateTextView.setText(releaseYear);
-        voteTextView.setText(getVoteAverageString(movie.getVoteAverage()));
-        synopsisTextView.setText(movie.getSynopsis());
+        if(movie != null) {
+            titleTextView.setText(movie.getTitle());
+            dateTextView.setText(releaseYear);
+            voteTextView.setText(getVoteAverageString(movie.getVoteAverage()));
+            synopsisTextView.setText(movie.getSynopsis());
+        }
 
         // instantiates & sets RecyclerView
-        recyclerView = findViewById(R.id.detail_list_recycler_view);
+        RecyclerView recyclerView = findViewById(R.id.detail_list_recycler_view);
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
 
@@ -125,11 +132,13 @@ public class DetailsActivity extends AppCompatActivity
 
         adapter.resetData();
 
-        connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        connectivityManager.addDefaultNetworkActiveListener(this);
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if(connectivityManager != null) {
+            connectivityManager.addDefaultNetworkActiveListener(this);
+        }
 
         trailerLoaderCallbacks = new TrailerLoaderCallbacks();
-        reviewLoaderCallbacks = new ReviewLoaderCallbacks();
+        ReviewLoaderCallbacks reviewLoaderCallbacks = new ReviewLoaderCallbacks();
 
         getSupportLoaderManager().initLoader(TRAILERS_LOADER_ID, movieBundle, trailerLoaderCallbacks);
         getSupportLoaderManager().initLoader(REVIEWS_LOADER_ID, movieBundle, reviewLoaderCallbacks);
@@ -144,7 +153,10 @@ public class DetailsActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
 
-        String movieId = getMovieIdString(movieBundle);
+        String movieId = null;
+        if(movieBundle != null) {
+            movieId = getMovieIdString(movieBundle);
+        }
 
         boolean isFavorite= isMovieFavorite(movieId);
         setButtonLabel(isFavorite);
@@ -157,7 +169,7 @@ public class DetailsActivity extends AppCompatActivity
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
             // stars return activity animation on the Up/Home button been selected
             case android.R.id.home:
@@ -192,16 +204,18 @@ public class DetailsActivity extends AppCompatActivity
     private void sendShareIntent() {
         String key = adapter.getVideoSharingKey();
         if(key != null) {
+            String title = getString(R.string.share_default_title);
+            if(getMovie() != null) {
+                title = String.format(getString(R.string.share_title), getMovie().getTitle());
+            }
+            String urlString = getYouTubeUrlString(key);
 
-        String title = String.format(getString(R.string.share_title), getMovie().getTitle());
-        String urlString = getYouTubeUrlString(key);
+            Intent intent = new Intent();
+            intent.setAction(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_TEXT, urlString);
 
-        Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_SEND);
-        intent.setType("text/plain");
-        intent.putExtra(Intent.EXTRA_TEXT, urlString);
-
-        startActivity(Intent.createChooser(intent, title));
+            startActivity(Intent.createChooser(intent, title));
         } else {
             Toast.makeText(this, R.string.share_error_message, Toast.LENGTH_SHORT).show();
         }
@@ -219,11 +233,15 @@ public class DetailsActivity extends AppCompatActivity
         return String.valueOf(vote) + getString(R.string.vote_average_denominator_suffix);
     }
 
+    @Nullable
     private Movie getMovie() {
-        return movieBundle.getParcelable(EXTRA_MOVIE);
+        if(movieBundle != null) {
+            return movieBundle.getParcelable(EXTRA_MOVIE);
+        }
+        return null;
     }
 
-    private String getMovieIdString(Bundle bundle) {
+    private String getMovieIdString(@NonNull Bundle bundle) {
         Movie movie = bundle.getParcelable(EXTRA_MOVIE);
         if(movie != null) {
             int movieId = movie.getId();
@@ -275,6 +293,10 @@ public class DetailsActivity extends AppCompatActivity
             }
         } else {
             Movie movie = getMovie();
+            if(movie == null) {
+                Log.d(TAG, "Error while adding movie to favorites. Null movie object");
+                return;
+            }
 
             ContentValues values = new ContentValues();
             values.put(FavoritessEntry.COLUMN_MOVIE_ID, movieId);
@@ -349,10 +371,12 @@ public class DetailsActivity extends AppCompatActivity
     }
 
     private class ReviewLoaderCallbacks implements LoaderManager.LoaderCallbacks<Cursor> {
+        @Nullable
         String movieId;
 
+        @Nullable
         @Override
-        public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
+        public Loader<Cursor> onCreateLoader(int i, @NonNull Bundle bundle) {
             movieId = getMovieIdString(bundle);
             String selection = ReviewEntry.COLUMN_MOVIES_FOREING_KEY+ " = ?";
             String[] selectionArgs = {
@@ -368,7 +392,7 @@ public class DetailsActivity extends AppCompatActivity
         }
 
         @Override
-        public void onLoadFinished(Loader<Cursor> loader, Cursor reviewsCursor) {
+        public void onLoadFinished(Loader<Cursor> loader, @NonNull Cursor reviewsCursor) {
             if (hasAnyDataToShow(DetailsActivity.this, reviewsCursor)) {
                 adapter.swapReviewsCursor(reviewsCursor);
             } else {
@@ -383,10 +407,12 @@ public class DetailsActivity extends AppCompatActivity
     }
 
     private class TrailerLoaderCallbacks implements LoaderManager.LoaderCallbacks<Cursor> {
+            @Nullable
             String movieId;
 
+        @Nullable
         @Override
-        public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
+        public Loader<Cursor> onCreateLoader(int i, @NonNull Bundle bundle) {
             movieId = getMovieIdString(bundle);
             String selection = TrailerEntry.COLUMN_MOVIES_FOREING_KEY+ " = ?";
             String[] selectionArgs = {
@@ -402,7 +428,7 @@ public class DetailsActivity extends AppCompatActivity
         }
 
         @Override
-        public void onLoadFinished(Loader<Cursor> loader, Cursor trailersCursor) {
+        public void onLoadFinished(Loader<Cursor> loader, @NonNull Cursor trailersCursor) {
             if (hasAnyDataToShow(DetailsActivity.this, trailersCursor)) {
                 Log.d(TAG, "puerco : trailer: updating cursor -------- ");
                 adapter.swapTrailersCursor(trailersCursor);

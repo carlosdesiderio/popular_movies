@@ -2,6 +2,7 @@ package uk.me.desiderio.popularmovies;
 
 import android.database.Cursor;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -30,14 +31,15 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
     private Cursor moviesCursor;
     private OnItemClickListener onItemClickListener;
 
+    @NonNull
     @Override
-    public MovieViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public MovieViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View listItemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.movie_list_item_layout, parent, false);
         return new MovieViewHolder(listItemView);
     }
 
     @Override
-    public void onBindViewHolder(final MovieViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull final MovieViewHolder holder, int position) {
         if(!moviesCursor.moveToPosition(position)) {
             return;
         }
@@ -92,7 +94,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
     public class MovieViewHolder extends RecyclerView.ViewHolder {
         public final ImageView posterImageView;
 
-        public MovieViewHolder(View itemView) {
+        public MovieViewHolder(@NonNull View itemView) {
             super(itemView);
             this.posterImageView = itemView.findViewById(R.id.movie_poster_image_view);
         }

@@ -2,6 +2,7 @@ package uk.me.desiderio.popularmovies.data;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 
 /**
  * Data object class to hold info about a movie instance
@@ -14,7 +15,7 @@ public class Movie implements Parcelable {
     private final String date;
     private final String synopsis;
     private final double voteAverage;
-    private final String posterURLString;;
+    private final String posterURLString;
 
     public Movie(int id, String title, String date, String synopsis, double voteAverage, String posterURLString) {
         this.id = id;
@@ -63,6 +64,7 @@ public class Movie implements Parcelable {
     /**
      * returns movie's poster url as a string
      */
+    @NonNull
     public String getPosterURLPathString() {
         return posterURLString;
     }
@@ -72,7 +74,7 @@ public class Movie implements Parcelable {
         return 0;
     }
 
-    private Movie(Parcel in) {
+    private Movie(@NonNull Parcel in) {
         this.id = in.readInt();
         this.title = in.readString();
         this.date = in.readString();
@@ -82,7 +84,7 @@ public class Movie implements Parcelable {
     }
 
     @Override
-    public void writeToParcel(Parcel parcel, int i) {
+    public void writeToParcel(@NonNull Parcel parcel, int i) {
         parcel.writeInt(id);
         parcel.writeString(title);
         parcel.writeString(date);
@@ -94,7 +96,7 @@ public class Movie implements Parcelable {
     @SuppressWarnings("unused")
     public static final Parcelable.Creator<Movie> CREATOR
             = new Parcelable.Creator<Movie>() {
-        public Movie createFromParcel(Parcel in) {
+        public Movie createFromParcel(@NonNull Parcel in) {
             return new Movie(in);
         }
 

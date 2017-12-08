@@ -4,12 +4,13 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.annotation.IntDef;
+import android.support.annotation.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Created by desiderio on 26/11/2017.
+ * Utility class to check if the device has an available connection
  */
 
 public class ConnectivityUtils {
@@ -20,12 +21,14 @@ public class ConnectivityUtils {
     public static final int CONNECTED = 1;
     public static final int DISCONNECTED = 0;
 
-
     @ConnectivityState
-    public static int checkConnectivity(Context context) {
+    public static int checkConnectivity(@NonNull Context context) {
         ConnectivityManager cm = (ConnectivityManager) context
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        NetworkInfo activeNetwork = null;
+        if(cm != null) {
+            activeNetwork = cm.getActiveNetworkInfo();
+        }
         boolean isConnected = activeNetwork != null
                 && activeNetwork.isConnectedOrConnecting();
 

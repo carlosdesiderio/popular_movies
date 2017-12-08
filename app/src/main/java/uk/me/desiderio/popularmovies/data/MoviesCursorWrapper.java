@@ -18,7 +18,7 @@ import uk.me.desiderio.popularmovies.network.MovieFeedType.FeedType;
 
 public class MoviesCursorWrapper extends CursorWrapper {
 
-    private String feedType;
+    private final String feedType;
 
     public MoviesCursorWrapper(Cursor cursor, @FeedType String feedType) {
         super(cursor);

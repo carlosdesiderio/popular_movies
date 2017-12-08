@@ -29,10 +29,10 @@ public class ViewUtils {
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({FLAG_NO_VIEW_DATA, FLAG_STALE_VIEW_DATA, FLAG_FRESH_VIEW_DATA})
-    public @interface ViewDataAvailability{}
-    public static final int FLAG_NO_VIEW_DATA = 0;
-    public static final int FLAG_STALE_VIEW_DATA = 1;
-    public static final int FLAG_FRESH_VIEW_DATA = 2;
+    private @interface ViewDataAvailability{}
+    private static final int FLAG_NO_VIEW_DATA = 0;
+    private static final int FLAG_STALE_VIEW_DATA = 1;
+    private static final int FLAG_FRESH_VIEW_DATA = 2;
 
     /**
      * check whether the cursor provided as its parameters
@@ -40,9 +40,9 @@ public class ViewUtils {
      * defined by the {@link MoviesContract}
      */
     @ViewDataAvailability
-    public static int getViewDataAvailability(@NonNull Cursor cursor) {
+    private static int getViewDataAvailability(@NonNull Cursor cursor) {
         int isdataAvail = FLAG_NO_VIEW_DATA;
-        if (cursor != null && cursor.getCount() > 0) {
+        if (cursor.getCount() > 0) {
             isdataAvail = FLAG_STALE_VIEW_DATA;
             if(!DataUtils.isDataStale(cursor, MoviesContract.STALE_DATA_MAX_LIFE_SPAN)) {
                 isdataAvail = ViewUtils.FLAG_FRESH_VIEW_DATA;
@@ -71,7 +71,8 @@ public class ViewUtils {
      * returns instance of {@link Snackbar}
      * the bar is customised depending on the connectivity state provided as parameter
      */
-    public static Snackbar getSnackbar(@ConnectivityState int connectivityState, View view, View.OnClickListener listener) {
+    @NonNull
+    public static Snackbar getSnackbar(@ConnectivityState int connectivityState, @NonNull View view, View.OnClickListener listener) {
         Context context = view.getContext();
         String message;
         int duration;

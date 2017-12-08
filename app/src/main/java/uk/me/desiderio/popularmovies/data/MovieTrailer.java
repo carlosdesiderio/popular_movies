@@ -2,17 +2,19 @@ package uk.me.desiderio.popularmovies.data;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 
 /**
- * Created by desiderio on 15/11/2017.
+ * Data class for the movie's trailer
  */
 
+@SuppressWarnings("unused")
 public class MovieTrailer implements Parcelable{
 
-    private String id;
+    private final String id;
     // key to access the trailer in YouTube
-    private String name;
-    private String key;
+    private final String name;
+    private final String key;
 
     public MovieTrailer(String id, String name, String key) {
         this.id = id;
@@ -20,7 +22,7 @@ public class MovieTrailer implements Parcelable{
         this.key = key;
     }
 
-    private MovieTrailer(Parcel in) {
+    private MovieTrailer(@NonNull Parcel in) {
         id = in.readString();
         name = in.readString();
         key = in.readString();
@@ -47,7 +49,7 @@ public class MovieTrailer implements Parcelable{
     }
 
     @Override
-    public void writeToParcel(Parcel parcel, int i) {
+    public void writeToParcel(@NonNull Parcel parcel, int i) {
         parcel.writeString(id);
         parcel.writeString(name);
         parcel.writeString(key);
@@ -56,7 +58,7 @@ public class MovieTrailer implements Parcelable{
     @SuppressWarnings("unused")
     public static final Parcelable.Creator<MovieTrailer> CREATOR
             = new Parcelable.Creator<MovieTrailer>() {
-        public MovieTrailer createFromParcel(Parcel in) {
+        public MovieTrailer createFromParcel(@NonNull Parcel in) {
             return new MovieTrailer(in);
         }
 

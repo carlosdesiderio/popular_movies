@@ -1,5 +1,6 @@
 package uk.me.desiderio.popularmovies;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.database.ContentObserver;
@@ -9,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.LoaderManager;
@@ -26,9 +28,7 @@ import android.widget.TextView;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import uk.me.desiderio.popularmovies.data.DataUtils;
 import uk.me.desiderio.popularmovies.data.Movie;
-import uk.me.desiderio.popularmovies.data.MoviesContract;
 import uk.me.desiderio.popularmovies.data.MoviesContract.FavoritessEntry;
 import uk.me.desiderio.popularmovies.data.MoviesContract.MoviesEntry;
 import uk.me.desiderio.popularmovies.data.MoviesCursorWrapper;
@@ -38,7 +38,6 @@ import uk.me.desiderio.popularmovies.network.MovieFeedType;
 import uk.me.desiderio.popularmovies.task.MoviesIntentService;
 import uk.me.desiderio.popularmovies.task.MoviesRequestTasks;
 import uk.me.desiderio.popularmovies.view.ViewUtils;
-import uk.me.desiderio.popularmovies.view.ViewUtils.ViewDataAvailability;
 
 import static uk.me.desiderio.popularmovies.network.ConnectivityUtils.CONNECTED;
 import static uk.me.desiderio.popularmovies.network.ConnectivityUtils.DISCONNECTED;
@@ -46,9 +45,6 @@ import static uk.me.desiderio.popularmovies.network.MovieFeedType.FAVORITES_MOVI
 import static uk.me.desiderio.popularmovies.network.MovieFeedType.FeedType;
 import static uk.me.desiderio.popularmovies.network.MovieFeedType.POPULAR_MOVIES_FEED;
 import static uk.me.desiderio.popularmovies.network.MovieFeedType.TOP_RATED_MOVIES_FEED;
-import static uk.me.desiderio.popularmovies.view.ViewUtils.FLAG_FRESH_VIEW_DATA;
-import static uk.me.desiderio.popularmovies.view.ViewUtils.FLAG_NO_VIEW_DATA;
-import static uk.me.desiderio.popularmovies.view.ViewUtils.FLAG_STALE_VIEW_DATA;
 import static uk.me.desiderio.popularmovies.view.ViewUtils.hasAnyDataToShow;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
@@ -72,6 +68,7 @@ ConnectivityManager.OnNetworkActiveListener{
     @FeedType
     private String currentFeedType;
 
+    @Nullable
     private ConnectivityManager connectivityManager;
 
     @Override
@@ -108,7 +105,7 @@ ConnectivityManager.OnNetworkActiveListener{
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
             case R.id.popular_movies_menu_item:
                 changeFeedType(POPULAR_MOVIES_FEED);
@@ -193,7 +190,7 @@ ConnectivityManager.OnNetworkActiveListener{
     }
 
     @Override
-    public void onItemClick(Movie movie, View sharedView) {
+    public void onItemClick(Movie movie, @NonNull View sharedView) {
         Intent intent = new Intent(this, DetailsActivity.class);
         // passes data to the DetailsActivity
         intent.putExtra(DetailsActivity.EXTRA_MOVIE, movie);
@@ -204,8 +201,10 @@ ConnectivityManager.OnNetworkActiveListener{
     }
 
 
+    @SuppressLint("StaticFieldLeak")
+    @Nullable
     @Override
-    public Loader<Cursor> onCreateLoader(int loaderId, final Bundle args) {
+    public Loader<Cursor> onCreateLoader(int loaderId, @NonNull final Bundle args) {
         return new AsyncTaskLoader<Cursor>(this) {
 
             private final ContentObserver obs = new ContentObserver(new Handler()) {
@@ -264,6 +263,7 @@ ConnectivityManager.OnNetworkActiveListener{
                 super.deliverResult(cursor);
             }
 
+            @Nullable
             private Cursor getMoviesCursor(String feedType) {
                 String selection = MoviesEntry.COLUMN_FEED_TYPE + " = ?";
                 String[] selectinArgs = {feedType};
@@ -276,6 +276,7 @@ ConnectivityManager.OnNetworkActiveListener{
                 return cursor;
             }
 
+            @Nullable
             private Cursor getFavoritesCursor() {
                 Cursor cursor = getContentResolver().query(FavoritessEntry.CONTENT_URI,
                         null,
@@ -287,14 +288,14 @@ ConnectivityManager.OnNetworkActiveListener{
         };
     }
 
-    private void onLoadFavoriteFinished(Cursor cursor) {
+    private void onLoadFavoriteFinished(@Nullable Cursor cursor) {
         if (cursor != null && cursor.getCount() > 0) {
             adapter.swapCursor(cursor);
             setEmptyStateViewVisibility(INVISIBLE, currentFeedType);
         }
     }
 
-    private void onLoadMoviesFinished(Cursor cursor, @FeedType String feedType) {
+    private void onLoadMoviesFinished(@NonNull Cursor cursor, @NonNull @FeedType String feedType) {
         if(hasAnyDataToShow(MainActivity.this, cursor)) {
             adapter.swapCursor(cursor);
             setEmptyStateViewVisibility(INVISIBLE, currentFeedType);
@@ -305,7 +306,7 @@ ConnectivityManager.OnNetworkActiveListener{
 
 
     @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+    public void onLoadFinished(Loader<Cursor> loader, @NonNull Cursor data) {
         MoviesCursorWrapper cursorWrapper = (MoviesCursorWrapper) data;
         String feedType = cursorWrapper.getFeedType();
 
@@ -322,7 +323,7 @@ ConnectivityManager.OnNetworkActiveListener{
         }
     }
 
-    public void requestServerData(@NonNull @FeedType String feedType) {
+    private void requestServerData(@NonNull @FeedType String feedType) {
         int connectivityState = getConnectivityState();
 
         switch (connectivityState) {

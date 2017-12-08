@@ -2,6 +2,7 @@ package uk.me.desiderio.popularmovies;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -28,7 +29,7 @@ import static uk.me.desiderio.popularmovies.view.DetailListViewItem.TRAILER_ITEM
  * Adapter for the {@link DetailsActivity}
  */
 
-public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final String TAG = DetailsAdapter.class.getSimpleName();
 
@@ -39,9 +40,11 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     private OnItemClickListener itemClickListener;
-    private Context context;
+    private final Context context;
 
+    @Nullable
     private Cursor trailersCursor;
+    @Nullable
     private Cursor reviewsCursor;
     private List<String> labels;
     private List<DetailListViewItem> viewItemList;
@@ -52,8 +55,9 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         viewItemList = new ArrayList<>();
     }
 
+    @Nullable
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, @ViewType int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, @ViewType int viewType) {
         View listItemView;
         switch (viewType) {
             case TRAILER_ITEM_TYPE:
@@ -85,7 +89,7 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 break;
             case REVIEW_ITEM_TYPE:
                 int dataOriginalPosition = getItemDataOriginalPosition(position);
-                if (reviewsCursor.moveToPosition(dataOriginalPosition)) {
+                if (reviewsCursor != null && reviewsCursor.moveToPosition(dataOriginalPosition)) {
 
                     String content = reviewsCursor.getString(reviewsCursor.getColumnIndex(ReviewEntry.COLUMN_CONTENT));
                     final String url = reviewsCursor.getString(reviewsCursor.getColumnIndex(ReviewEntry.COLUMN_URL));
@@ -105,7 +109,7 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 break;
             case TRAILER_ITEM_TYPE:
                 int trailerPosition = getItemDataOriginalPosition(position);
-                if(trailersCursor.moveToPosition(trailerPosition)) {
+                if(trailersCursor != null && trailersCursor.moveToPosition(trailerPosition)) {
 
                     String name = trailersCursor.getString(trailersCursor.getColumnIndex(TrailerEntry.COLUMN_NAME));
                     final String key = trailersCursor.getString(trailersCursor.getColumnIndex(TrailerEntry.COLUMN_KEY));
@@ -144,7 +148,7 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
      * It returns the first YouTube trailer key
      */
     @Nullable
-    public String getVideoSharingKey() {
+    String getVideoSharingKey() {
         if(trailersCursor != null && trailersCursor.moveToPosition(0)) {
             return trailersCursor.getString(trailersCursor.getColumnIndex(TrailerEntry.COLUMN_KEY));
         }
@@ -155,7 +159,7 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         this.itemClickListener = listener;
     }
 
-    void swapTrailersCursor(Cursor trailersCursor) {
+    void swapTrailersCursor(@Nullable Cursor trailersCursor) {
         if (trailersCursor != null && trailersCursor.getCount() > 0) {
             labels.add(context.getString(R.string.details_list_heading_trailers));
             Log.d(TAG, "Swap Trailer Cursor :: Register Header View");
@@ -169,7 +173,7 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         notifyDataSetChanged();
     }
 
-    void swapReviewsCursor(Cursor reviewsCursor) {
+    void swapReviewsCursor(@Nullable Cursor reviewsCursor) {
         if (reviewsCursor != null && reviewsCursor.getCount() > 0) {
             this.labels.add(context.getString(R.string.details_list_heading_reviews));
             Log.d(TAG, "Swap Trailer Cursor :: Register Header View");
@@ -189,7 +193,7 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         this.viewItemList = new ArrayList<>();
     }
 
-    public boolean hasData() {
+    boolean hasData() {
         return (viewItemList != null && viewItemList.size() > 0);
     }
 
@@ -198,7 +202,7 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         viewItemList.add(dataItemType);
     }
 
-    private void registerAllCursorDataItems(@ViewType int type, Cursor cursor) {
+    private void registerAllCursorDataItems(@ViewType int type, @NonNull Cursor cursor) {
         while(cursor.moveToNext()) {
             registerDataTypeItem(type, cursor.getPosition());
         }
@@ -209,28 +213,28 @@ public class DetailsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     public class HeadingViewHolder extends RecyclerView.ViewHolder {
-        TextView headingTextView;
+        final TextView headingTextView;
 
-        HeadingViewHolder(View itemView) {
+        HeadingViewHolder(@NonNull View itemView) {
             super(itemView);
             headingTextView = itemView.findViewById(R.id.heading_content_text_view);
         }
     }
 
     public class TrailerViewHolder extends RecyclerView.ViewHolder {
-        TextView nameTextView;
+        final TextView nameTextView;
 
-        TrailerViewHolder(View itemView) {
+        TrailerViewHolder(@NonNull View itemView) {
             super(itemView);
             nameTextView = itemView.findViewById(R.id.trailer_name_text_view);
         }
     }
 
     public class ReviewViewHolder extends RecyclerView.ViewHolder {
-        TextView contentTextView;
+        final TextView contentTextView;
 
 
-        ReviewViewHolder(View itemView) {
+        ReviewViewHolder(@NonNull View itemView) {
             super(itemView);
             contentTextView = itemView.findViewById(R.id.review_content_text_view);
         }

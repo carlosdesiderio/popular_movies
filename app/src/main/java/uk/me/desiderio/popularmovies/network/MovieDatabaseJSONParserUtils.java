@@ -1,6 +1,7 @@
 package uk.me.desiderio.popularmovies.network;
 
 import android.content.ContentValues;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -148,7 +149,7 @@ public class MovieDatabaseJSONParserUtils {
         return valuesList;
     }
 
-    private static boolean isJsonResponseError(JSONObject moviesJson) throws JSONException {
+    private static boolean isJsonResponseError(@NonNull JSONObject moviesJson) {
         return moviesJson.has(NODE_NAME_STATUS_MESSAGE);
     }
 }
