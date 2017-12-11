@@ -28,7 +28,7 @@ public class DataUtils {
             long dataTimeMillis = date.getTime();
             long currentTimeMillis = System.currentTimeMillis();
             long dataLifeTimeMillis = currentTimeMillis - dataTimeMillis;
-            Log.d("DataUtils", "puerco : data age : " + maxDataLifeSpan + " : " + dataLifeTimeMillis);
+            Log.d("DataUtils", "Is data stale? data age : " + maxDataLifeSpan + " : " + dataLifeTimeMillis);
 
             if( dataLifeTimeMillis > maxDataLifeSpan) {
                 return true;
