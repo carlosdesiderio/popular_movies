@@ -145,7 +145,6 @@ ConnectivityManager.OnNetworkActiveListener{
         }
     }
 
-
     private void setEmptyStateViewVisibility(@NonNull @EmptyStateViewVisibility int visibility, @NonNull @FeedType String feedType) {
         switch ((visibility)) {
             case VISIBLE:
@@ -165,7 +164,7 @@ ConnectivityManager.OnNetworkActiveListener{
     }
 
     private void showSnack(@NonNull @ConnectivityState int connectivityState) {
-        // shows snack bar displaying different message depending on connection state
+        // shows snack bar displaying different connectivity message
         View anchorView = findViewById(R.id.movie_list_recycler_view);
         final Snackbar bar = ViewUtils.getSnackbar(connectivityState, anchorView, new View.OnClickListener() {
             @Override

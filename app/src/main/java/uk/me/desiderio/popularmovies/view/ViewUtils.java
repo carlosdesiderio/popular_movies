@@ -22,7 +22,7 @@ import static uk.me.desiderio.popularmovies.network.ConnectivityUtils.DISCONNECT
 import static uk.me.desiderio.popularmovies.network.ConnectivityUtils.checkConnectivity;
 
 /**
- * Util class for the {@link MainActivity} and the {@link DetailsActivity}
+ * View utility class for the {@link MainActivity} and the {@link DetailsActivity}
  */
 
 public class ViewUtils {
@@ -54,7 +54,7 @@ public class ViewUtils {
 
     /**
      * returns true when :
-     * -  data is not is older that the time span defined by the {@link MoviesContract}
+     * -  data is not  older that the time span defined by the {@link MoviesContract}
      * -  no connection to update data that is older that the time span defined
      *    by the {@link MoviesContract}
      */

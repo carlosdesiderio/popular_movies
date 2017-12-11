@@ -5,8 +5,10 @@ import android.support.annotation.StringDef;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+import uk.me.desiderio.popularmovies.MainActivity;
+
 /**
- * Defines types of request to the '/movies' feed
+ * Defines feed types to be displayed in the {@link MainActivity}
  */
 
 public class MovieFeedType {

@@ -69,6 +69,57 @@ public class MovieContentProvider extends ContentProvider {
     }
 
     @Nullable
+    @SuppressWarnings("ConstantConditions")
+    private ContentResolver getContentResolver() {
+        return getContext().getContentResolver();
+    }
+
+    /** helper method that carries out db inserts with the setting provided as its parameters */
+    private Uri doInsert(String tableName, Uri contentUri, ContentValues contentValues) {
+        final SQLiteDatabase database = dbHelper.getWritableDatabase();
+        Uri returnUri;
+
+        long id = database.insert(tableName, null, contentValues);
+        Log.d(TAG, "Data item inserted with id: " + id);
+        if(id != -1) {
+            returnUri = ContentUris.withAppendedId(contentUri, id);
+        } else {
+            throw new SQLException("Failed to insert raw in uri : " + contentUri);
+        }
+        return returnUri;
+    }
+
+    /** helper method that carries out bulk insert with the setting provided as its parameters */
+    private int executedBulkInsertAt(@NonNull String tableName, @NonNull Uri uri, @NonNull ContentValues[] values) {
+        final SQLiteDatabase database = dbHelper.getWritableDatabase();
+        Log.d(TAG, "Bulk inserting : " + values.length + " data items");
+
+        int rowInserted = 0;
+
+        database.beginTransaction();
+        try {
+            for (ContentValues value : values) {
+                long id = database.insert(tableName, null, value);
+                if (id != -1) {
+                    rowInserted++;
+                }
+            }
+            database.setTransactionSuccessful();
+
+        } finally {
+            database.endTransaction();
+        }
+
+        if (rowInserted > 0) {
+            Log.d(TAG, "Bulk insertion completed  : " + values.length + " data items");
+            if (getContentResolver() != null) {
+                getContentResolver().notifyChange(uri, null);
+            }
+        }
+        return rowInserted;
+    }
+
+    @Nullable
     @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
         final SQLiteDatabase database = dbHelper.getWritableDatabase();
@@ -196,57 +247,7 @@ public class MovieContentProvider extends ContentProvider {
         }
     }
 
-    private Uri doInsert(String tableName, Uri contentUri, ContentValues contentValues) {
-        final SQLiteDatabase database = dbHelper.getWritableDatabase();
-        Uri returnUri;
-
-        long id = database.insert(tableName, null, contentValues);
-        Log.d(TAG, "Data item inserted with id: " + id);
-        if(id != -1) {
-            returnUri = ContentUris.withAppendedId(contentUri, id);
-        } else {
-            throw new SQLException("Failed to insert raw in uri : " + contentUri);
-        }
-        return returnUri;
-    }
-
-    private int executedBulkInsertAt(@NonNull String tableName, @NonNull Uri uri, @NonNull ContentValues[] values) {
-        final SQLiteDatabase database = dbHelper.getWritableDatabase();
-        Log.d(TAG, "Bulk inserting : " + values.length + " data items");
-
-        int rowInserted = 0;
-
-        database.beginTransaction();
-        try {
-            for (ContentValues value : values) {
-                long id = database.insert(tableName, null, value);
-                if (id != -1) {
-                    rowInserted++;
-                }
-            }
-            database.setTransactionSuccessful();
-
-        } finally {
-            database.endTransaction();
-        }
-
-        if (rowInserted > 0) {
-            Log.d(TAG, "Bulk insertion completed  : " + values.length + " data items");
-            if (getContentResolver() != null) {
-                getContentResolver().notifyChange(uri, null);
-            }
-        }
-        return rowInserted;
-    }
-
-    @Nullable
-    @SuppressWarnings("ConstantConditions")
-    private ContentResolver getContentResolver() {
-        return getContext().getContentResolver();
-    }
-    
-    // unsupported actions
-
+    /** delete action is only supported for the favorite feed */
     @Override
     public int delete(@NonNull Uri uri, @Nullable String whereClause, @Nullable String[] whereArgs) {
         SQLiteDatabase database = dbHelper.getWritableDatabase();
@@ -274,6 +275,7 @@ public class MovieContentProvider extends ContentProvider {
         return deletedRows;
     }
 
+    /** update action is not supported */
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues contentValues, @Nullable String s, @Nullable String[] strings) {
         throw new UnsupportedOperationException("Update is not a supported action from this provider");

@@ -22,7 +22,7 @@ import uk.me.desiderio.popularmovies.network.MovieFeedType;
 import uk.me.desiderio.popularmovies.network.MovieFeedType.FeedType;
 
 /**
- * Provides task to be run in the background by the {@link MoviesIntentService}
+ * Provides api request and paring tasks to be run in the background by the {@link MoviesIntentService}
  */
 
 public class MoviesRequestTasks {

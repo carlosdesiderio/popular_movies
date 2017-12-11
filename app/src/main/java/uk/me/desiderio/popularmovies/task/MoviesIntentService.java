@@ -5,7 +5,7 @@ import android.content.Intent;
 import android.support.annotation.Nullable;
 
 /**
- * Service to load data from the Movies Database service
+ * Service to load and parse data from the Movies Database service
  */
 
 public class MoviesIntentService extends IntentService {

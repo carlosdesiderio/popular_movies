@@ -78,23 +78,23 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
         return 0;
     }
 
-    public void swapCursor(Cursor moviesCursor) {
+    void swapCursor(Cursor moviesCursor) {
         this.moviesCursor = moviesCursor;
         notifyDataSetChanged();
     }
 
-    public boolean hasData() {
+    boolean hasData() {
         return moviesCursor != null && moviesCursor.getCount() > 0;
     }
 
-    public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
+    void setOnItemClickListener(OnItemClickListener onItemClickListener) {
         this.onItemClickListener = onItemClickListener;
     }
 
-    public class MovieViewHolder extends RecyclerView.ViewHolder {
-        public final ImageView posterImageView;
+    class MovieViewHolder extends RecyclerView.ViewHolder {
+        final ImageView posterImageView;
 
-        public MovieViewHolder(@NonNull View itemView) {
+        MovieViewHolder(@NonNull View itemView) {
             super(itemView);
             this.posterImageView = itemView.findViewById(R.id.movie_poster_image_view);
         }
